@@ -12,14 +12,27 @@
 extern "C" {
 #endif
 
-    void ADXL362_StartMeasurements();
-    void ADXL362_QueueReadXYZT();
-    void ADXL362_InterpretXYZT();
+    #include "FIFOSPI.h"
 
     extern short ADXL362_XAcceleration;
     extern short ADXL362_YAcceleration;
     extern short ADXL362_ZAcceleration;
     extern short ADXL362_Temperature;
+
+    void ADXL362_StartMeasurements();
+
+    void ADXL362_QueueReadXYZT();
+    void ADXL362_InterpretXYZT();
+
+    void ADXL362_QueueReadMSBX();
+    void ADXL362_InterpretMSBX();
+    void ADXL362_QueueReadMSBY();
+    void ADXL362_InterpretMSBY();
+    void ADXL362_QueueReadMSBZ();
+    void ADXL362_InterpretMSBZ();
+
+
+
 
 #ifdef	__cplusplus
 }

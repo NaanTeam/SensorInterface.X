@@ -19,7 +19,7 @@
 #define FIFOSPI2_BUFFERSIZE 100
 
 //Flags
-int isRunnning = 0; //Represents if the SPI2 is currently running
+unsigned char FIFOSPI_isRunnning = 0; //Represents if the SPI2 is currently running
 int isTransmitsTurn = 1; //used for toggling between transmit and receive 
 
 //Send buffers and indexes
@@ -45,11 +45,13 @@ void FIFOSPI2_Setup()
         i++;
     }
 
+    //TODO: This needs to based on what device we are using and the sub-devices of the #defines.
     //Sets up the SPI2 pins for the PIC32M320H
     TRISGbits.TRISG8 = 0; //SDO2 write
     TRISGbits.TRISG7 = 1; //SDI2 read
     TRISGbits.TRISG6 = 0; //SCK2 write
-    TRISDbits.TRISD4 = 0; //SS2 write
+    TRISDbits.TRISD4 = 0; //SS2 D1 write //Especially here
+    TRISDbits.TRISD3 = 0; //SS2 D2 write
 
     // disable all interrupts
     INTEnable(INT_SPI2E, INT_DISABLED);
@@ -90,26 +92,29 @@ void FIFOSPI2_Setup()
     SPI2CONbits.ON = 1;     //SPI ON
 }
 
-int FIFOSPI2_SendQueue(unsigned char data[], int length)
+int FIFOSPI2_SendQueue(unsigned char data[], int length, int deviceSSLine)
 {
     int i = 0;
     //If the send buffer isn't full then add another char
     if ((SendBuffer_Index + length) < FIFOSPI2_BUFFERSIZE)
     {
-        //Adds a token to signify end signal group.
-        SendBufferFlags[SendBuffer_Index + length - 1] = 1; 
+
+//        //Adds a token to signify end signal group.
+//        SendBufferFlags[SendBuffer_Index + length - 1] = 1;
 
         //Add each byte to the buffer
         while (i < length)
         {
+            //Populate SendBuuferFlags with which device we a re sending to.
+            SendBufferFlags[i] = deviceSSLine;
             SendBuffer[SendBuffer_Index++] = data[i];
             i++;
         }
 
         //If SPI2 IRQ is not running then start it
-        if (isRunnning == 0) 
+        if (FIFOSPI_isRunnning == 0)
         {
-            isRunnning = 1;
+            FIFOSPI_isRunnning = 1;
             INTSetFlag(INT_SPI2TX);
         }
 
@@ -179,12 +184,32 @@ void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
             ReceiveBuffer[ReceiveBuffer_Index++] = SPI2BUF;
 
             //Check if this byte is the end of the group.
-            if (SendBufferFlags[ReceiveBuffer_Index - 1] == 1)
+//            if (SendBufferFlags[ReceiveBuffer_Index - 1] == 1)
+//            {                //Deselect the current device
+//                FIFOSPI2_DeviceSSLine1 = 1; //Hi to deselect
+//
+//                //Reset the buffer's flag
+//                SendBufferFlags[ReceiveBuffer_Index - 1] = 0; //reset token
+//            }
+
+            //If the current device we are sending to doesn't match the next byte's device
+            if (SendBufferFlags[SendBuffer_SentIndex] != SendBufferFlags[SendBuffer_SentIndex -1])
             {
+                //TODO: decide if it's better just to deselect all devices.
                 //Deselect the current device
-                PORTDbits.RD4 = 1; //Hi to deselect
-                //Reset the buffer's flag
-                SendBufferFlags[ReceiveBuffer_Index - 1] = 0; //reset token
+                switch (SendBufferFlags[ReceiveBuffer_Index - 1])
+                {
+                        case 0:
+                            FIFOSPI2_DeviceSSLine1 = 1;
+                            FIFOSPI2_DeviceSSLine2 = 1;
+                            break;
+                        case 1:
+                             FIFOSPI2_DeviceSSLine1 = 1; //Hi to deselect
+                             break;
+                        case 2:
+                             FIFOSPI2_DeviceSSLine2 = 1; //Hi to deselect
+                             break;
+                }
             }
 
             //If their are bytes to send
@@ -198,7 +223,7 @@ void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
                 //Clear the TX interupt
                 INTClearFlag(INT_SPI2TX);
                 //update the flag that it's not running anymore.
-                isRunnning = 0;
+                FIFOSPI_isRunnning = 0;
                 //Clear the Send Buffer indecies
                 SendBuffer_SentIndex = 0;
                 SendBuffer_Index = 0;
@@ -220,8 +245,19 @@ void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
             //Set the flag so it's RX's turn next
             isTransmitsTurn = 0;
 
+//            //Select the current device
+//            FIFOSPI2_DeviceSSLine1 = 0;
             //Select the current device
-            PORTDbits.RD4 = 0;
+            switch (SendBufferFlags[SendBuffer_SentIndex])
+            {
+                    case 1:
+                         FIFOSPI2_DeviceSSLine1 = 0; //Low to select
+                         break;
+                    case 2:
+                         FIFOSPI2_DeviceSSLine2 = 0; //Low to select
+                         break;
+            }
+
             //Send the next byte
             SPI2BUF = SendBuffer[SendBuffer_SentIndex++];
         }

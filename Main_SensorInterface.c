@@ -7,11 +7,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "SensorLoop.h"
-#include "ADXL362.h"
-#include "FIFOSPI.h"
 #include <plib.h>
 #include <peripheral/ports.h>
+
+#include "SensorTimerLoop.h"
+#include "ADXL362.h"
+#include "L3G4200D.h"
+#include "FIFOSPI.h"
+
+
 
 // Configuration Bit settings
 // SYSCLK = 80 MHz (8MHz Crystal / FPLLIDIV * FPLLMUL / FPLLODIV)
@@ -55,10 +59,10 @@ int main(int argc, char** argv)
     UART_setup();
     SensorLoop_SetupAll();
 
-    //yaaa not working atm. Putting out 0s.
     
     while(1)
     {
+
 //        char j, k;
 //            //Read the X Acceleration
 //        char ReadReg[10];
@@ -66,17 +70,32 @@ int main(int argc, char** argv)
 //        ReadReg[1] = 0x08;
 //        ReadReg[2] = 0x00; //X
 //        FIFOSPI2_SendQueue(ReadReg, 3);
+        
         DelayTime(1000);
         char buff[50];
 
         //itoa(buff, ADXL362_XAcceleration,10);
         //char *statement = "Hello World!\n\r";
+
+        //High resolution: 1 mg/LSB
+        double xa = ADXL362_XAcceleration * 0.001;
+        double xy = ADXL362_YAcceleration * 0.001;
+        double xz = ADXL362_ZAcceleration * 0.001;
+
         sprintf(buff, " X Accel: %d \n\r Y_Accel: %d \n\r Z_Accel: %d \n\r Temp: %d \n\r\n\r", ADXL362_XAcceleration,
                 ADXL362_YAcceleration, ADXL362_ZAcceleration, ADXL362_Temperature); //Increases used flash by 5%
+        sprintf(buff, " X Accel: %f \n\r Y_Accel: %f \n\r Z_Accel: %f \n\r Temp: %d \n\r\n\r", xa,
+                xy, xz, ADXL362_Temperature); //Increases used flash by 5%
         putsUART1(buff);
-//        k = FIFOSPI2_ReadQueue(&j);
-//        k = FIFOSPI2_ReadQueue(&j);
-//        k = FIFOSPI2_ReadQueue(&j);
+        
+//        double xa = ADXL362_XAcceleration * 0.001;
+//        double xy = ADXL362_YAcceleration * 0.001;
+//        double xz = ADXL362_ZAcceleration * 0.001;
+
+        sprintf(buff, " X Gyro: %d \n\r Y Gyro: %d \n\r Z Gyro:: %d \n\r Temp: %d \n\r\n\r",
+                L3G4200D_XAxis, L3G4200D_YAxis, L3G4200D_ZAxis, L3G4200D_Temperature); //Increases used flash by 5%
+        putsUART1(buff);
+
     }
     return (EXIT_SUCCESS);
 }

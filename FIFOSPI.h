@@ -12,11 +12,19 @@
 #ifndef FIFOSPI_H
 #define	FIFOSPI_H
 
-#include <plib.h>
-
 #ifdef	__cplusplus
 extern "C" {
 #endif
+
+
+    #include <plib.h>
+
+
+    #define FIFOSPI2_DeviceSSLine1 PORTDbits.RD4    //Uno32 Pin 10
+    #define FIFOSPI2_DeviceSSLine2 PORTDbits.RD3    //Uno32 Pin 9
+
+
+    extern unsigned char FIFOSPI_isRunnning;
 
     /**
      * Sets up SPI2 in master modeusing a FIFO buffer at PER_FREQ/4 frequency,
@@ -29,11 +37,12 @@ extern "C" {
      *
      * @param data: An array of characters to queue for the SPI to send.
      * @param length: The length of the data array.
+     * @param deviceSSLine: The device to write to.
      *
      * @return A '1' if the characters where succesfully added. -1 if the send
      * buffer is full.
      */
-    int FIFOSPI2_SendQueue(unsigned char data[], int length);
+    int FIFOSPI2_SendQueue(unsigned char data[], int length, int deviceSSLine);
 
     /**
      * Transfers a byte from the received SPI buffer to a pointer.
