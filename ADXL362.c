@@ -1,4 +1,9 @@
-//Accelerometer
+/**
+ * @Author: Connor Martin
+ * @Description: A set of function for interfacing with the ADXL362 Accelerometer.
+ * @Requirements: FIFOSPI.c
+ * @Devices: PIC32MX320F128H
+ */
 
 #include "ADXL362.h"
 
@@ -10,171 +15,152 @@ short ADXL362_Temperature = 0;
 void ADXL362_StartMeasurements()
 {
     //Reset the device
-    char k, j;
+    
+    char func_rslt, read_rslt1;
     char reset[3];
-    reset[0] = 0x0A;
-    reset[1] = 0x1F;
-    reset[2] = 0x52;
-
+    reset[0] = ADXL362_REG_WRITE;
+    reset[1] = ADXL362_SOFT_RESET;
+    reset[2] = ADXL362_SOFT_RESET_KEY; //Represents the letter r
     FIFOSPI2_SendQueue(reset, 3, 1);
-    //Wait for all data to be sent
+    //Wait for the device to reset
     int i = 0;
-    while (i < (1*1000))
+    while (i < (1000))
     {
         i++;
     }
-
-    //while (FIFOSPI2_RecieveBufferIndex() < 3) {}
-    k = FIFOSPI2_ReadQueue(&j);
-    k = FIFOSPI2_ReadQueue(&j);
-    k = FIFOSPI2_ReadQueue(&j);
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1);
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1);
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1);
 
 
     //Turns on Measurement Mode
     char measurementMode[3];
-    measurementMode[0] = 0x0A;
-    measurementMode[1] = 0x2D;
-    measurementMode[2] = 0x02; //Turn on Measurement mode
+    measurementMode[0] = ADXL362_REG_WRITE;
+    measurementMode[1] = ADXL362_POWER_CTL;
+    measurementMode[2] = 0x00 |
+            ADXL362_MEASURE_3D; //Turn on Measurement mode
     FIFOSPI2_SendQueue(measurementMode, 3, 1);
-    char readReg[4];
-//    measurementMode[3] = 0x0B;
-//    measurementMode[4] = 0x08;
-//    measurementMode[5] = 0x00; //Follow it with a read X register
-    readReg[0] = 0x0B; //Read
-    readReg[1] = 0x08; //read X-reg
-    readReg[2] = 0x00; //X1
-    //readReg[3] = 0x00; //X2
+
+
+    //Immediately Follow it with a read X register
+    char readReg[3];
+    readReg[0] = ADXL362_REG_READ; //Read
+    readReg[1] = ADXL362_XDATA8; //read X-reg
+    readReg[2] = 0x00; //fluff for the read
     FIFOSPI2_SendQueue(measurementMode, 3, 1);
 
 
     //Wait for all data to be sent
     while (FIFOSPI2_RecieveBufferIndex() < 6) {}
-    k = FIFOSPI2_ReadQueue(&j);
-    k = FIFOSPI2_ReadQueue(&j);
-    k = FIFOSPI2_ReadQueue(&j);
-    k = FIFOSPI2_ReadQueue(&j);
-    k = FIFOSPI2_ReadQueue(&j);
-    k = FIFOSPI2_ReadQueue(&j);
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1);
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1);
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1);
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1);
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1);
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1);
     //k = FIFOSPI2_ReadQueue(&j);
 }
 
 void ADXL362_QueueReadXYZT()
 {
-    char k, j;
-    char read[11];
-    read[0] = 0x0B; //Read
-    read[1] = 0x0E; //read X-reg
-    read[2] = 0x00; //X1
-    read[3] = 0x00; //X2
-    read[4] = 0x00; //Y1
-    read[5] = 0x00; //Y2
-    read[6] = 0x00; //Z1
-    read[7] = 0x00; //Z2
-    read[8] = 0x00; //Temperature 1
-    read[9] = 0x00; //Temperature 2
-    //read[10] = 0x00; //Extra read needed for some reason...
+    //Burst read
+    char read[10];
+    read[0] = ADXL362_REG_READ; //Read
+    read[1] = ADXL362_XDATAL; //read X-reg
+    read[2] = 0x00; //ADXL362_XDATAL
+    read[3] = 0x00; //ADXL362_XDATAH
+    read[4] = 0x00; //ADXL362_YDATAL
+    read[5] = 0x00; //ADXL362_YDATAH
+    read[6] = 0x00; //ADXL362_ZDATAL
+    read[7] = 0x00; //ADXL362_ZDATAH
+    read[8] = 0x00; //ADXL362_TEMPL
+    read[9] = 0x00; //ADXL362_TEMPH
     FIFOSPI2_SendQueue(read, 10, 1);
 }
 void ADXL362_InterpretXYZT()
 {
-    char j1, j2, k;
+    char func_rslt, read_rslt1, read_rslt2;
 
 
-    //while (FIFOSPI2_RecieveBufferIndex() < 11) {}
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //fluff
 
-    k = FIFOSPI2_ReadQueue(&j1); //fluff
-    k = FIFOSPI2_ReadQueue(&j2); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_XDATAL
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //ADXL362_XDATAH
+    ADXL362_XAcceleration = (read_rslt2 << 8) + read_rslt1;
 
-    k = FIFOSPI2_ReadQueue(&j1); //X low
-    k = FIFOSPI2_ReadQueue(&j2); //X high
-    ADXL362_XAcceleration = ((j2 & 0xFF) << 8) + j1;
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_YDATAL
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //ADXL362_YDATAH
+    ADXL362_YAcceleration = (read_rslt2 << 8) + read_rslt1;
 
-    k = FIFOSPI2_ReadQueue(&j1); //Y low
-    k = FIFOSPI2_ReadQueue(&j2); //Y hi
-    ADXL362_YAcceleration = (j2 << 8) + j1;
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_ZDATAL
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //ADXL362_ZDATAH
+    ADXL362_ZAcceleration = (read_rslt2 << 8) + read_rslt1;
 
-    k = FIFOSPI2_ReadQueue(&j1); //Z low
-    k = FIFOSPI2_ReadQueue(&j2); //Z hi
-    ADXL362_ZAcceleration = (j2 << 8) + j1;
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_TEMPL
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //ADXL362_TEMPH
+    ADXL362_Temperature = (read_rslt2 << 8) + read_rslt1;
 
-    k = FIFOSPI2_ReadQueue(&j1); //Temp lo
-    k = FIFOSPI2_ReadQueue(&j2); //Temp hi
-    ADXL362_Temperature = (j2 << 8) + j1;
-
-    //k = FIFOSPI2_ReadQueue(&j1); //Fluff
     //TODO: twos complement acceleration or temperature data.
 
 }
 
 void ADXL362_QueueReadMSBX()
 {
-    char k, j;
     char read[3];
-    read[0] = 0x0B; //Read
-    read[1] = 0x08; //read X-reg
-    read[2] = 0x00; //8 MSB X
+    read[0] = ADXL362_REG_READ; //Read
+    read[1] = ADXL362_XDATA8; //read X-reg
+    read[2] = 0x00; //fluff for read (8 MSB of X accel reg)
     FIFOSPI2_SendQueue(read, 3, 1);
 }
 void ADXL362_InterpretMSBX()
-
 {
-    char j1, j2, k;
+    char func_rslt, read_rslt1, read_rslt2;
 
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //fluff
 
-    //while (FIFOSPI2_RecieveBufferIndex() < 11) {}
-
-    k = FIFOSPI2_ReadQueue(&j1); //fluff
-    k = FIFOSPI2_ReadQueue(&j2); //fluff
-
-    k = FIFOSPI2_ReadQueue(&j1); //X 8 MSB
-    ADXL362_XAcceleration = j1 ;
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_XDATA8 (8 MSB)
+    ADXL362_XAcceleration = read_rslt1 ;
 
 }
+
 void ADXL362_QueueReadMSBY()
 {
-    char k, j;
     char read[3];
-    read[0] = 0x0B; //Read
-    read[1] = 0x09; //read X-reg
-    read[2] = 0x00; //8 MSB X
+    read[0] = ADXL362_REG_READ; //Read
+    read[1] = ADXL362_YDATA8; //read Y-reg
+    read[2] = 0x00; //fluff
     FIFOSPI2_SendQueue(read, 3, 1);
 }
 void ADXL362_InterpretMSBY()
 {
-    char j1, j2, k;
+    char func_rslt, read_rslt1, read_rslt2;
 
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //fluff
 
-    //while (FIFOSPI2_RecieveBufferIndex() < 11) {}
-
-    k = FIFOSPI2_ReadQueue(&j1); //fluff
-    k = FIFOSPI2_ReadQueue(&j2); //fluff
-
-    k = FIFOSPI2_ReadQueue(&j1); //X 8 MSB
-    ADXL362_YAcceleration = j1 ;
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_YDATA8 (Y 8-MSB)
+    ADXL362_YAcceleration = read_rslt1 ;
 
 }
 
 void ADXL362_QueueReadMSBZ()
 {
-    char k, j;
     char read[3];
-    read[0] = 0x0B; //Read
-    read[1] = 0x10; //read X-reg
-    read[2] = 0x00; //8 MSB X
+    read[0] = ADXL362_REG_READ; //Read
+    read[1] = ADXL362_ZDATA8; //read Z-reg
+    read[2] = 0x00; //fluff
     FIFOSPI2_SendQueue(read, 3, 1);
 }
 void ADXL362_InterpretMSBZ()
 {
-    char j1, j2, k;
+    char func_rslt, read_rslt1, read_rslt2;
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //fluff
 
-
-    //while (FIFOSPI2_RecieveBufferIndex() < 11) {}
-
-    k = FIFOSPI2_ReadQueue(&j1); //fluff
-    k = FIFOSPI2_ReadQueue(&j2); //fluff
-
-    k = FIFOSPI2_ReadQueue(&j1); //X 8 MSB
-    ADXL362_ZAcceleration = j1 ;
+    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_ZDATA8 (Z 8-MSB)
+    ADXL362_ZAcceleration = read_rslt1 ;
 
 }
 

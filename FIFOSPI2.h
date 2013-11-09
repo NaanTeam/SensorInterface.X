@@ -9,8 +9,8 @@
  *  13          4               RG6          SCK2 write
  */
 
-#ifndef FIFOSPI_H
-#define	FIFOSPI_H
+#ifndef FIFOSPI2_H
+#define	FIFOSPI2_H
 
 #ifdef	__cplusplus
 extern "C" {
@@ -22,9 +22,10 @@ extern "C" {
 
     #define FIFOSPI2_DeviceSSLine1 PORTDbits.RD4    //Uno32 Pin 10
     #define FIFOSPI2_DeviceSSLine2 PORTDbits.RD3    //Uno32 Pin 9
+    #define FIFOSPI2_BUFFERSIZE 100
 
+    extern unsigned char FIFOSPI2_isRunnning;
 
-    extern unsigned char FIFOSPI_isRunnning;
 
     /**
      * Sets up SPI2 in master modeusing a FIFO buffer at PER_FREQ/4 frequency,
@@ -37,7 +38,8 @@ extern "C" {
      *
      * @param data: An array of characters to queue for the SPI to send.
      * @param length: The length of the data array.
-     * @param deviceSSLine: The device to write to.
+     * @param deviceSSLine: The device to write to. Modify #defines for different
+     * pins.
      *
      * @return A '1' if the characters where succesfully added. -1 if the send
      * buffer is full.
@@ -68,5 +70,5 @@ extern "C" {
 }
 #endif
 
-#endif	/* FIFOSPI_H */
+#endif	/* FIFOSPI2_H */
 

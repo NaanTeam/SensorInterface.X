@@ -1,4 +1,9 @@
-//Gyroscope
+/**
+ * @Author: Connor Martin
+ * @Description: A set of function for interfacing with the L3G4200D Gyroscope
+ * @Requirements: FIFOSPI.c
+ * @Devices: PIC32MX320F128H
+ */
 
 #include "L3G4200D.h"
 
@@ -18,7 +23,7 @@ int L3G4200D_StartMeasurements()
 
     unsigned char CtrlReg1 = 0;
     //Basicaly turn the device on.
-    CtrlReg1 |= 
+    CtrlReg1 |= 0x00 |
             (0 << L3G4200D_RegBit_DR) | //100 hz ODR
             (0 << L3G4200D_RegBit_BW) | //12.5 Cutoff
             (1 << L3G4200D_RegBit_PD) | //Turn's off Power Down
@@ -42,7 +47,8 @@ int L3G4200D_StartMeasurements()
 
     //Data update, endian mode, scale selection, self test, SPI wire mode
     unsigned char CtrlReg4 = 0;
-    CtrlReg4 |= (0 << L3G4200D_RegBit_FS); //Full scale selection of 250 dps.
+    CtrlReg4 |= 0x00 |
+            (0 << L3G4200D_RegBit_FS); //Full scale selection of 250 dps.
     L3G4200D_WriteRegister_Blocking(L3G4200D_Reg_CTRLREG4, CtrlReg4);
 
     
@@ -84,7 +90,7 @@ void L3G4200D_WriteRegister_Blocking(unsigned char reg, unsigned char value)
 
 
     char func_rslt, read_rslt;
-    while (FIFOSPI2_RecieveBufferIndex() < 2 || FIFOSPI_isRunnning != 0) {}
+    while (FIFOSPI2_RecieveBufferIndex() < 2 || FIFOSPI2_isRunnning != 0) {}
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt);
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt);
 }
@@ -104,7 +110,7 @@ unsigned char L3G4200D_ReadRegister_Blocking(unsigned char reg)
     
     //Force wait for the end of the transmission
     char func_rslt, read_rslt;
-    while (FIFOSPI2_RecieveBufferIndex() < 2 || FIFOSPI_isRunnning != 0) {}
+    while (FIFOSPI2_RecieveBufferIndex() < 2 || FIFOSPI2_isRunnning != 0) {}
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt);
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt);
 
@@ -112,7 +118,7 @@ unsigned char L3G4200D_ReadRegister_Blocking(unsigned char reg)
 }
 
 
-void L3G4200D_ReadXYZT()
+void L3G4200D_QueueReadXYZT()
 {
     
     L3G4200D_QueueReadRegister(L3G4200D_Reg_OUTXL);
@@ -139,7 +145,7 @@ void L3G4200D_InterpretXYZT()
     L3G4200D_XAxis = read_rslt2;
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //X hi
-    L3G4200D_XAxis |= ((read_rslt2 & 0xFF) << 8);
+    L3G4200D_XAxis |= (read_rslt2 << 8);
 
     //Y axis
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
@@ -147,7 +153,7 @@ void L3G4200D_InterpretXYZT()
     L3G4200D_YAxis = read_rslt2;
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //Y hi
-    L3G4200D_YAxis |= ((read_rslt2 & 0xFF) << 8);
+    L3G4200D_YAxis |= (read_rslt2 << 8);
 
     //Z axis
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
@@ -155,7 +161,7 @@ void L3G4200D_InterpretXYZT()
     L3G4200D_ZAxis = read_rslt2;
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //Z hi
-    L3G4200D_ZAxis |= ((read_rslt2 & 0xFF) << 8);
+    L3G4200D_ZAxis |= (read_rslt2 << 8);
 
     //Temperature
     func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff

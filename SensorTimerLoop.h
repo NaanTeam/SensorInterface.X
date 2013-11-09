@@ -1,8 +1,9 @@
-/* 
- * File:   SensorTimerLoop.h
- * Author: Connor
- *
- * Created on October 16, 2013, 2:01 PM
+/**
+ * @Author: Connor Martin
+ * @Description: A interrupt driven timer loop that queues and interprets
+ * data from the different sensors.
+ * @Requirements: FIFOSPI.c, ADXL362.c, L3G4200D.c
+ * @Devices: PIC32MX320F128H
  */
 
 #ifndef SensorTimerLoop_H
@@ -13,9 +14,9 @@ extern "C" {
 #endif
     
     #include <plib.h>
-    #include "FIFOSPI.h"
+    #include "FIFOSPI2.h"
     #include "ADXL362.h"
-
+    #include "L3G4200D.h"
 
     /**
      * Sets up the IRQ overflow for Timer1 to run at div 8 and a counter of 0xFFFF.

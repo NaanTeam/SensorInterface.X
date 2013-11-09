@@ -13,24 +13,26 @@
 #include "SensorTimerLoop.h"
 #include "ADXL362.h"
 #include "L3G4200D.h"
-#include "FIFOSPI.h"
+#include "FIFOSPI2.h"
 
 
+#if defined (__32MX695F512L__) || (__32MX320F128H__)
+    // Configuration Bit settings
+    // SYSCLK = 80 MHz (8MHz Crystal / FPLLIDIV * FPLLMUL / FPLLODIV)
+    // PBCLK = 10 MHz (SYSCLK / FPBDIV)
+    // Primary Osc w/PLL (XT+,HS+,EC+PLL)
+    // WDT OFF
+    // Other options are don't care
+    #pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
+    #pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
 
-// Configuration Bit settings
-// SYSCLK = 80 MHz (8MHz Crystal / FPLLIDIV * FPLLMUL / FPLLODIV)
-// PBCLK = 10 MHz (SYSCLK / FPBDIV)
-// Primary Osc w/PLL (XT+,HS+,EC+PLL)
-// WDT OFF
-// Other options are don't care
-#pragma config FPLLMUL = MUL_20, FPLLIDIV = DIV_2, FPLLODIV = DIV_1, FWDTEN = OFF
-#pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_8
+    #define SYS_FREQ (80000000L)
 
-#define SYS_FREQ (80000000L)
+    #define UART_MODULE_ID UART1 // PIM is connected to WF32 through UART1 module
+    #define	GetPeripheralClock()		(SYS_FREQ/(1 << OSCCONbits.PBDIV))
+    #define	GetInstructionClock()		(SYS_FREQ)
+#endif
 
-#define UART_MODULE_ID UART1 // PIM is connected to WF32 through UART1 module
-#define	GetPeripheralClock()		(SYS_FREQ/(1 << OSCCONbits.PBDIV))
-#define	GetInstructionClock()		(SYS_FREQ)
 
 void UART_setup(void){
     UARTConfigure(UART_MODULE_ID, UART_ENABLE_PINS_TX_RX_ONLY);
@@ -59,17 +61,9 @@ int main(int argc, char** argv)
     UART_setup();
     SensorLoop_SetupAll();
 
-    
+
     while(1)
     {
-
-//        char j, k;
-//            //Read the X Acceleration
-//        char ReadReg[10];
-//        ReadReg[0] = 0x0B;
-//        ReadReg[1] = 0x08;
-//        ReadReg[2] = 0x00; //X
-//        FIFOSPI2_SendQueue(ReadReg, 3);
         
         DelayTime(1000);
         char buff[50];

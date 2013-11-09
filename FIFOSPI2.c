@@ -11,15 +11,15 @@
  *  11          6               RG8          SDO2 write
  *  12          5               RG7          SDI2 read
  *  13          4               RG6          SCK2 write
+ * @Devices: PIC32MX320F128H
  */
 
-#include "FIFOSPI.h"
+#include "FIFOSPI2.h"
 
 
-#define FIFOSPI2_BUFFERSIZE 100
 
 //Flags
-unsigned char FIFOSPI_isRunnning = 0; //Represents if the SPI2 is currently running
+unsigned char FIFOSPI2_isRunnning = 0; //Represents if the SPI2 is currently running
 int isTransmitsTurn = 1; //used for toggling between transmit and receive 
 
 //Send buffers and indexes
@@ -81,7 +81,16 @@ void FIFOSPI2_Setup()
     INTClearFlag(INT_SPI2RX);
 
     //Enable SPI2 Interupts
-    INTEnable(INT_SPI2TX, INT_ENABLED); //SPI2 transmit buffer empty.
+    //TODO: ERROR: CAUSED FROM EVER ENDING TX INTERUPT FLAGS
+    
+    //Check to see if their are bytes queued up to be sent
+    if (SendBuffer_Index > 0)
+    {
+        //Enables the IRQ to start sending.
+        INTEnable(INT_SPI2TX, INT_ENABLED); //SPI2 transmit buffer empty.
+    }
+        
+
     INTEnable(INT_SPI2RX, INT_ENABLED);//SPI2 Receive Done.
     
     //Configure SPI2 and turn it on
@@ -112,10 +121,17 @@ int FIFOSPI2_SendQueue(unsigned char data[], int length, int deviceSSLine)
         }
 
         //If SPI2 IRQ is not running then start it
-        if (FIFOSPI_isRunnning == 0)
+        if (FIFOSPI2_isRunnning == 0)
         {
-            FIFOSPI_isRunnning = 1;
-            INTSetFlag(INT_SPI2TX);
+            FIFOSPI2_isRunnning = 1;
+            
+            //If the device is on and ready to send
+            if (SPI2CONbits.ON == 1)
+            {
+                //Start sending
+                INTSetFlag(INT_SPI2TX);
+                INTEnable(INT_SPI2TX, INT_ENABLED);
+            }
         }
 
         return 1;
@@ -165,15 +181,29 @@ int FIFOSPI2_RecieveBufferIndex()
     return ReceiveBuffer_Index;
 }
 
+//PIC32MX320F128L
+//#define RECEIVE_FLAG        INT_SPI2RX
+//#define TX_FLAG             INT_SPI2TX
+
+//PIC32MX320F128L
+#define RECEIVE_FLAG        INT_U3RXIF
+#define TX_FLAG             INT_U3TXIF
+
 //This is the SPI2 Interupt Handler
 void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
 {
-    //Receive interupt
-    if (INTGetFlag(INT_SPI2RX)) 
-    {
-        //Clear Interrupt flag
-        INTClearFlag(INT_SPI2RX);
 
+//    INTSetFlag(INT_SPI2TX);
+//    INTClearFlag(INT_SPI2TX);
+//    INTSetFlag(INT_U3TX);
+//    INTClearFlag(INT_U3TX);
+//    SPI2BUF = 0x45;
+//    int tst = IFS1;
+//    int tst2 = SPI2STAT;
+    
+    //Receive interupt
+    if (INTGetFlag(INT_SPI2RX))
+    {
         //If it's RX's turn
         if (isTransmitsTurn == 0) 
         {
@@ -183,14 +213,9 @@ void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
             //Read byte from buffer
             ReceiveBuffer[ReceiveBuffer_Index++] = SPI2BUF;
 
-            //Check if this byte is the end of the group.
-//            if (SendBufferFlags[ReceiveBuffer_Index - 1] == 1)
-//            {                //Deselect the current device
-//                FIFOSPI2_DeviceSSLine1 = 1; //Hi to deselect
-//
-//                //Reset the buffer's flag
-//                SendBufferFlags[ReceiveBuffer_Index - 1] = 0; //reset token
-//            }
+            //Clear Interrupt flag
+            INTClearFlag(INT_SPI2RX);
+
 
             //If the current device we are sending to doesn't match the next byte's device
             if (SendBufferFlags[SendBuffer_SentIndex] != SendBufferFlags[SendBuffer_SentIndex -1])
@@ -217,13 +242,17 @@ void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
             {
                 //Set the TX Interupt flag so that it can send them
                 INTSetFlag(INT_SPI2TX);
+                INTEnable(INT_SPI2TX, INT_ENABLED);
             }
             else
             {
-                //Clear the TX interupt
+                //Clear and disable the TX interupt
+                INTEnable(INT_SPI2TX, INT_DISABLED);
                 INTClearFlag(INT_SPI2TX);
+                
+                
                 //update the flag that it's not running anymore.
-                FIFOSPI_isRunnning = 0;
+                FIFOSPI2_isRunnning = 0;
                 //Clear the Send Buffer indecies
                 SendBuffer_SentIndex = 0;
                 SendBuffer_Index = 0;
@@ -233,11 +262,12 @@ void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
         
     }
 
-    //Transmit interrupt
-    if (INTGetFlag(INT_SPI2TX))
+    //Transmit interrupt and it is enabled.
+    if (INTGetFlag(INT_SPI2TX) && INTGetEnable(INT_SPI2TX))
     {
         //Clear Interrupt flag
-        INTClearFlag(INT_SPI2TX);
+        //INTClearFlag(INT_SPI2TX);
+        INTEnable(INT_SPI2TX, INT_DISABLED);
 
         //If it's TX's turn
         if (isTransmitsTurn == 1)

@@ -1,6 +1,9 @@
 /**
- * This file sets up timer 1 to be used to update the sensor data.
- *
+ * @Author: Connor Martin
+ * @Description: A interrupt driven timer loop that queues and interprets
+ * data from the different sensors.
+ * @Requirements: FIFOSPI.c, ADXL362.c, L3G4200D.c
+ * @Devices: PIC32MX320F128H
  */
 
 #include "SensorTimerLoop.h"
@@ -30,7 +33,7 @@ void SensorLoop_SetupAll()
     INTSetVectorSubPriority(INT_TIMER_1_VECTOR, INT_SUB_PRIORITY_LEVEL_0);
     INTEnable(INT_T1, INT_ENABLED);
     //Turn on clock
-    OpenTimer1(T1_ON | T1_SOURCE_INT | T1_PS_1_64, 0x1FFF);
+    OpenTimer1(T1_ON | T1_SOURCE_INT | T1_PS_1_64, 0x4FFF);
     //Turn on Interrupts
     INTEnableInterrupts();
 }
@@ -44,7 +47,7 @@ void __ISR(_TIMER_1_VECTOR, IPL3AUTO) Timer1Handler(void)
     L3G4200D_InterpretXYZT();   
     ADXL362_InterpretXYZT(); //Interpret the previous one.
 
-    L3G4200D_ReadXYZT();
+    L3G4200D_QueueReadXYZT();
     ADXL362_QueueReadXYZT();
     
 
