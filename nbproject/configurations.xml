@@ -9,6 +9,8 @@
       <itemPath>SensorTimerLoop.h</itemPath>
       <itemPath>L3G4200D.h</itemPath>
       <itemPath>FIFOSPI2.h</itemPath>
+      <itemPath>FIFOI2C.h</itemPath>
+      <itemPath>Hardware.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -23,6 +25,7 @@
       <itemPath>HMC5883L.c</itemPath>
       <itemPath>L3G4200D.c</itemPath>
       <itemPath>FIFOSPI2.c</itemPath>
+      <itemPath>FIFIOI2C.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

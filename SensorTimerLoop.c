@@ -11,19 +11,28 @@
 
 void SensorLoop_SetupAll()
 {
+    int i = 0;
+
     //Enable toggle LED directional register
     TRISFbits.TRISF0 = 0;
     // Enable multi-vector interrupts
     INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
 
-    //Setup Accelerometer
+    //Setup SPI and I2C
     FIFOSPI2_Setup();
-    INTEnableInterrupts();
-    ADXL362_StartMeasurements();
-    
+    FIFOI2C_initialize();
 
+
+    INTEnableInterrupts();
+    //Setup Accelerometer
+    ADXL362_StartMeasurements();
     //Setup Gyroscope
     L3G4200D_StartMeasurements();
+    //Setup 3-axis compass
+    HMC5883L_startMeasurements();
+    //Give them time to setup.
+    while (i < 200000)
+        i++;
     INTDisableInterrupts();
 
 
@@ -46,18 +55,12 @@ void __ISR(_TIMER_1_VECTOR, IPL3AUTO) Timer1Handler(void)
 {
     L3G4200D_InterpretXYZT();   
     ADXL362_InterpretXYZT(); //Interpret the previous one.
+    HMC5883L_interpretXZY();
 
     L3G4200D_QueueReadXYZT();
     ADXL362_QueueReadXYZT();
-    
+    HMC5883L_queueReadXZY();
 
-////    ADXL362_QueueReadMSBX();
-////    ADXL362_InterpretMSBX();
-//////    ADXL362_QueueReadMSBY();
-//////    ADXL362_InterpretMSBY();
-//////    ADXL362_QueueReadMSBZ();
-//////    ADXL362_InterpretMSBZ();
-////
-////    //PORTFbits.RF0 = PORTFbits.RF0 ^ 1; //toggle LED
+
     INTClearFlag(INT_T1);// Be sure to clear the Timer1 interrupt status
 }

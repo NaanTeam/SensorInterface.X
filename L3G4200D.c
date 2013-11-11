@@ -7,10 +7,10 @@
 
 #include "L3G4200D.h"
 
-short L3G4200D_XAxis = 0;
-short L3G4200D_YAxis = 0;
-short L3G4200D_ZAxis = 0;
-short L3G4200D_Temperature = 0;
+double L3G4200D_XAxis = 0;
+double L3G4200D_YAxis = 0;
+double L3G4200D_ZAxis = 0;
+double L3G4200D_Temperature = 0;
 
 int L3G4200D_StartMeasurements()
 {
@@ -133,40 +133,52 @@ void L3G4200D_QueueReadXYZT()
 
 void L3G4200D_InterpretXYZT()
 {
+    uint8 func_rslt, fluff;
     
-    char read_rslt1, read_rslt2, func_rslt;
+    uint8 x_msb = 0, x_lsb = 0;
+    uint8 y_msb = 0, y_lsb = 0;    
+    uint8 z_msb = 0, z_lsb = 0;
+    uint8 temp;
+    
+    short x_16b = 0, y_16b = 0, z_16b= 0;
+    double dps_per_LSB = 0;
+    double C_per_LSB = 0;
 
-
-    //while (FIFOSPI2_RecieveBufferIndex() < 11) {}
 
     //X axis
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //X low
-    L3G4200D_XAxis = read_rslt2;
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //X hi
-    L3G4200D_XAxis |= (read_rslt2 << 8);
-
+    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&x_lsb); //X low
+    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&x_msb); //X hi
     //Y axis
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //Y low
-    L3G4200D_YAxis = read_rslt2;
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //Y hi
-    L3G4200D_YAxis |= (read_rslt2 << 8);
-
+    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&y_lsb); //Y low
+    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&y_msb); //Y hi
     //Z axis
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //Z low
-    L3G4200D_ZAxis = read_rslt2;
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //Z hi
-    L3G4200D_ZAxis |= (read_rslt2 << 8);
-
+    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&z_lsb); //Z low
+    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&z_msb); //Z hi
     //Temperature
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //Z low
-    L3G4200D_Temperature = read_rslt2;
+    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&temp); //Temp
+    
+    
+    x_16b = (x_msb << 8) | x_lsb;
+    y_16b = (y_msb << 8) | y_lsb;
+    z_16b = (z_msb << 8) | z_lsb;
+    
+    //'degress per second' per least significant bit.
+    dps_per_LSB = 8.75e-3;//From L3G4200D data sheet (250dps mode)
+    //celsius per least significant bit (Check L3G4200D datasheet)
+    C_per_LSB = 1;
+    
+    L3G4200D_XAxis = dps_per_LSB * (double)x_16b;
+    L3G4200D_YAxis = dps_per_LSB * (double)y_16b;
+    L3G4200D_ZAxis = dps_per_LSB * (double)z_16b;
+    L3G4200D_Temperature = C_per_LSB * (double)temp;
+    
 
 }
 

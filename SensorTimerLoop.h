@@ -14,19 +14,19 @@ extern "C" {
 #endif
     
     #include <plib.h>
+
     #include "FIFOSPI2.h"
+    #include "FIFOI2C.h"
+
     #include "ADXL362.h"
     #include "L3G4200D.h"
+    #include "HMC5883L.h"
 
     /**
      * Sets up the IRQ overflow for Timer1 to run at div 8 and a counter of 0xFFFF.
      */
     void SensorLoop_SetupAll();
 
-    /**
-     * Sets up ADXL362 to be prepared for reading. Requires FIFOSPi setup.
-     */
-    void SensorLoop_SetupADXL362();
 
 
 #ifdef	__cplusplus

@@ -7,10 +7,10 @@
 
 #include "ADXL362.h"
 
-short ADXL362_XAcceleration = 0;
-short ADXL362_YAcceleration = 0;
-short ADXL362_ZAcceleration = 0;
-short ADXL362_Temperature = 0;
+double ADXL362_XAcceleration = 0;
+double ADXL362_YAcceleration = 0;
+double ADXL362_ZAcceleration = 0;
+double ADXL362_Temperature = 0;
 
 void ADXL362_StartMeasurements()
 {
@@ -78,28 +78,50 @@ void ADXL362_QueueReadXYZT()
     FIFOSPI2_SendQueue(read, 10, 1);
 }
 void ADXL362_InterpretXYZT()
-{
-    char func_rslt, read_rslt1, read_rslt2;
+{    
+    uint8 func_rslt, fluff;
+    
+    uint8 x_msb = 0, x_lsb = 0;
+    uint8 y_msb = 0, y_lsb = 0;    
+    uint8 z_msb = 0, z_lsb = 0;
+    uint8 temp_msb = 0, temp_lsb = 0;
+    
+    short x_16b = 0, y_16b = 0, z_16b= 0, temp_16b = 0;
+    double G_per_LSB = 0;
+    double C_per_LSB = 0;
 
 
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //fluff
 
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_XDATAL
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //ADXL362_XDATAH
-    ADXL362_XAcceleration = (read_rslt2 << 8) + read_rslt1;
+    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
 
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_YDATAL
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //ADXL362_YDATAH
-    ADXL362_YAcceleration = (read_rslt2 << 8) + read_rslt1;
+    func_rslt = FIFOSPI2_ReadQueue(&x_lsb); //ADXL362_XDATAL
+    func_rslt = FIFOSPI2_ReadQueue(&x_msb); //ADXL362_XDATAH
 
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_ZDATAL
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //ADXL362_ZDATAH
-    ADXL362_ZAcceleration = (read_rslt2 << 8) + read_rslt1;
+    func_rslt = FIFOSPI2_ReadQueue(&y_lsb); //ADXL362_YDATAL
+    func_rslt = FIFOSPI2_ReadQueue(&y_msb); //ADXL362_YDATAH
 
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt1); //ADXL362_TEMPL
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt2); //ADXL362_TEMPH
-    ADXL362_Temperature = (read_rslt2 << 8) + read_rslt1;
+    func_rslt = FIFOSPI2_ReadQueue(&z_lsb); //ADXL362_ZDATAL
+    func_rslt = FIFOSPI2_ReadQueue(&z_msb); //ADXL362_ZDATAH
+
+    func_rslt = FIFOSPI2_ReadQueue(&temp_lsb); //ADXL362_TEMPL
+    func_rslt = FIFOSPI2_ReadQueue(&temp_msb); //ADXL362_TEMPH
+    
+    
+    x_16b = (x_msb << 8) | x_lsb;
+    y_16b = (y_msb << 8) | y_lsb;
+    z_16b = (z_msb << 8) | z_lsb;
+    temp_16b = (temp_msb << 8) | temp_lsb;
+    
+    //gravitiys per least significant bit (Check ADXL362 datasheet)
+    G_per_LSB = 1e-3; //For the 2g range
+    //celsius per least significant bit (Check ADXL362 datasheet)
+    C_per_LSB = 0.065;
+
+    ADXL362_XAcceleration = G_per_LSB * (double)x_16b;
+    ADXL362_YAcceleration = G_per_LSB * (double)y_16b;
+    ADXL362_ZAcceleration = G_per_LSB * (double)z_16b;
+    ADXL362_Temperature = C_per_LSB * (double)temp_16b;
 
     //TODO: twos complement acceleration or temperature data.
 

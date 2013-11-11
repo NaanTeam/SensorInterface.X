@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
     #include "FIFOSPI2.h"
+    #include "Hardware.h"
 
     /* --- command --- */
 
@@ -155,10 +156,10 @@ extern "C" {
 
 
 
-    extern short ADXL362_XAcceleration;
-    extern short ADXL362_YAcceleration;
-    extern short ADXL362_ZAcceleration;
-    extern short ADXL362_Temperature;
+    extern double ADXL362_XAcceleration;
+    extern double ADXL362_YAcceleration;
+    extern double ADXL362_ZAcceleration;
+    extern double ADXL362_Temperature;
 
     
     void ADXL362_StartMeasurements();

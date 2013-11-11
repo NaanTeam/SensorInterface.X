@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
     #include "FIFOSPI2.h"
+    #include "Hardware.h"
 
     /**Device identification registe.r*/
     #define L3G4200D_Reg_WHOAMI  0x0F
@@ -64,13 +65,13 @@ extern "C" {
     //... Additional interrupt registers that I didn't include.
     
     /**Global variable that contains gyroscope's X-axis data.*/
-    extern short L3G4200D_XAxis;
+    extern double L3G4200D_XAxis;
     /**Global variable that contains gyroscope's Y-axis data.*/
-    extern short L3G4200D_YAxis;
+    extern double L3G4200D_YAxis;
     /**Global variable that contains gyroscope's Z-axis data.*/
-    extern short L3G4200D_ZAxis;
+    extern double L3G4200D_ZAxis;
     /**Global variable that contains gyroscope's temperature data.*/
-    extern short L3G4200D_Temperature;
+    extern double L3G4200D_Temperature;
 
     /**
      * Sets up and turns on the L3G4200D for measurement reading.
