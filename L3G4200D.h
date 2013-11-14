@@ -68,11 +68,11 @@ extern "C" {
 
     // <editor-fold defaultstate="collapsed" desc="Global variables">
     /**Global variable that contains gyroscope's X-axis data.*/
-    extern double L3G4200D_XAxis;
+    extern double L3G4200D_XAngularRate;
     /**Global variable that contains gyroscope's Y-axis data.*/
-    extern double L3G4200D_YAxis;
+    extern double L3G4200D_YAngularRate;
     /**Global variable that contains gyroscope's Z-axis data.*/
-    extern double L3G4200D_ZAxis;
+    extern double L3G4200D_ZAngularRate;
     /**Global variable that contains gyroscope's temperature data.*/
     extern double L3G4200D_Temperature; // </editor-fold>
 

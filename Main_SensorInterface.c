@@ -154,8 +154,18 @@ void DelayTime(int ms)
 
 int main(int argc, char** argv)
 {
+//    char buffer[32];
+//    char b = 'g';
+//    int a3=5, b3=3;
+//    b = 'k';
+//    double fg = 9.6654346;
+//    //sprintf (buffer, "%d plus %d is %d", a3, b3, a3+b3);
+//    sprintf (buffer, "%f", fg);
     UART_setup();
+
     SensorLoop_SetupAll();
+
+    SerialComm_start();
 
     while(1)
     {
@@ -172,7 +182,7 @@ int main(int argc, char** argv)
         
 
         sprintf(buff, " X Gyro: %f \n\r Y Gyro: %f \n\r Z Gyro:: %f \n\r Temp: %f \n\r\n\r",
-                L3G4200D_XAxis, L3G4200D_YAxis, L3G4200D_ZAxis, L3G4200D_Temperature);
+                L3G4200D_XAngularRate, L3G4200D_YAngularRate, L3G4200D_ZAngularRate, L3G4200D_Temperature);
         putsUART1(buff);
 
         
@@ -181,6 +191,7 @@ int main(int argc, char** argv)
         putsUART1(buff);
 
     }
+
     return (EXIT_SUCCESS);
 }
 

@@ -7,9 +7,9 @@
 
 #include "L3G4200D.h"
 
-double L3G4200D_XAxis = 0;
-double L3G4200D_YAxis = 0;
-double L3G4200D_ZAxis = 0;
+double L3G4200D_XAngularRate = 0;
+double L3G4200D_YAngularRate = 0;
+double L3G4200D_ZAngularRate = 0;
 double L3G4200D_Temperature = 0;
 
 int L3G4200D_startMeasurements()
@@ -174,9 +174,9 @@ void L3G4200D_interpretXYZT()
     //celsius per least significant bit (Check L3G4200D datasheet)
     C_per_LSB = 1;
     
-    L3G4200D_XAxis = dps_per_LSB * (double)x_16b;
-    L3G4200D_YAxis = dps_per_LSB * (double)y_16b;
-    L3G4200D_ZAxis = dps_per_LSB * (double)z_16b;
+    L3G4200D_XAngularRate = dps_per_LSB * (double)x_16b;
+    L3G4200D_YAngularRate = dps_per_LSB * (double)y_16b;
+    L3G4200D_ZAngularRate = dps_per_LSB * (double)z_16b;
     L3G4200D_Temperature = C_per_LSB * (double)temp;
     
 
