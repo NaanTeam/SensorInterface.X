@@ -2,7 +2,7 @@
  * @Author: Connor Martin
  * @Description: A set of function for interfacing with the ADXL362 Accelerometer.
  * @Requirements: FIFOSPI.c
- * @Devices: PIC32MX320F128H
+ * @Devices: 
  */
 
 #ifndef ADXL362_H
@@ -162,16 +162,16 @@ extern "C" {
     extern double ADXL362_Temperature;
 
     
-    void ADXL362_StartMeasurements();
+    void ADXL362_startMeasurements();
 
-    void ADXL362_QueueReadXYZT();
-    void ADXL362_InterpretXYZT();
+    void ADXL362_queueReadXYZT();
+    void ADXL362_interpretXYZT();
 
-    void ADXL362_QueueReadMSBX();
-    void ADXL362_InterpretMSBX();
-    void ADXL362_QueueReadMSBY();
-    void ADXL362_InterpretMSBY();
-    void ADXL362_QueueReadMSBZ();
+    void ADXL362_queueReadMSBX();
+    void ADXL362_interpretMSBX();
+    void ADXL362_queueReadMSBY();
+    void ADXL362_interpretMSBY();
+    void ADXL362_queueReadMSBZ();
     void ADXL362_InterpretMSBZ();
 
 

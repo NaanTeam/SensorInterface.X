@@ -1,32 +1,28 @@
-/*
- * File:   FIFIOI2C.c
- * Author: Connor
- *
- * Created on November 9, 2013, 8:36 PM
- */
 
 #include "FIFOI2C.h"
 
-//Local to .c file
-FIFOI2C_Device FIFOI2C_Devices_List[FIFOI2C_DEVICES_COUNT];
-uint8 FIFOI2C_isRunning = 0;
-uint16 FIFOI2C_currentDevice = 0;
-uint8 FIFOI2C_nextInterruptReceive = 0;
 
+// <editor-fold defaultstate="collapsed" desc="Local Variable and Typedef Declarations">
+static FIFOI2C_Device FIFOI2C_Devices_List[FIFOI2C_DEVICES_COUNT];
+static uint8 FIFOI2C_isRunning = 0;
+static uint16 FIFOI2C_currentDevice = 0;
+static uint8 FIFOI2C_nextInterruptReceive = 0;
+// </editor-fold>
+    
+// <editor-fold defaultstate="collapsed" desc="Public Function Definitions">
 void FIFOI2C_initialize()
 {
     int i = 0;
     int device = 0;
 
-    
     //Interrupt Stuff
     INTSetVectorPriority(INT_I2C_2_VECTOR, INT_PRIORITY_LEVEL_4);
     INTSetVectorSubPriority(INT_I2C_2_VECTOR, INT_SUB_PRIORITY_LEVEL_0);
-   
+
     INTClearFlag(INT_I2C2B);
     //INTClearFlag(INT_I2C2S);
     INTClearFlag(INT_I2C2M);
-    
+
     /*Bus Collision events that generate an interrupt are:
         ?During a Start sequence ? SDAx sampled before Start condition
         ?During a Start sequence ? SCLx = 0 before SDAx = 0
@@ -60,7 +56,7 @@ void FIFOI2C_initialize()
         FIFOI2C_Devices_List[device].transmit_buffer_length = 0;
         FIFOI2C_Devices_List[device].receive_buffer_current = 0;
         FIFOI2C_Devices_List[device].receive_buffer_length = 0;
-     
+
         i = 0;
         while(i < FIFOI2C_TRANSMIT_BUFFER_SIZE)
         {
@@ -219,6 +215,8 @@ uint8 FIFOI2C_addQueue(uint16 device, uint8 byte_buffer[], FIFOI2C_Device_Comman
             INTSetFlag(INT_I2C2M);
         }
     }
+
+    return 1;
 }
 
 FIFOI2C_RX_Byte FIFOI2C_readQueue(uint16 device)
@@ -239,7 +237,7 @@ FIFOI2C_RX_Byte FIFOI2C_readQueue(uint16 device)
         rxb.rx_byte = FIFOI2C_Devices_List[device].receive_buffer[ind].rx_byte;
         FIFOI2C_Devices_List[device].receive_buffer_current++;
 
-        
+
         //If all the bytes have been read from the receive buffer reset the indexes
         if (FIFOI2C_Devices_List[device].receive_buffer_current >= FIFOI2C_Devices_List[device].receive_buffer_length)
         {
@@ -342,50 +340,54 @@ uint8 FIFOI2C_addQueue_writeDeviceRegisters(uint16 device, uint8 start_register,
 
     if ((FIFOI2C_Devices_List[device].transmit_buffer_length + buffer_length) >= (FIFOI2C_TRANSMIT_BUFFER_SIZE - 1))
     {
-    }
+        //Start
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_START; //Start it
+        send_byte_buffer[ind++] = 0x13; //filler
 
-    //Start
-    state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_START; //Start it
-    send_byte_buffer[ind++] = 0x13; //filler
+        //Device Addr + write
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
+        send_byte_buffer[ind++] = (FIFOI2C_Devices_List[device].address << 1) | 0x00;
 
-    //Device Addr + write
-    state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
-    send_byte_buffer[ind++] = (FIFOI2C_Devices_List[device].address << 1) | 0x00;
+        //Send Start Register Address
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
+        send_byte_buffer[ind++] = start_register;
 
-    //Send Start Register Address
-    state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
-    send_byte_buffer[ind++] = start_register;
+        while (i < (buffer_length - 1))
+        {
+            //Send value to write to register
+            state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
+            send_byte_buffer[ind++] = byte_buffer[i];
 
-    while (i < (buffer_length - 1))
-    {
+            //Do I need a Recieved_ACK cmd?
+
+            i++;
+        }
+
         //Send value to write to register
         state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
         send_byte_buffer[ind++] = byte_buffer[i];
 
-        //Do I need a Recieved_ACK cmd?
 
-        i++;
+        //Master sends STOP
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_STOP;
+        send_byte_buffer[ind++] = 0x00; //filler
+
+
+        //Required for IRQ to know when to stop
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_CMDEND; //Signifys end of transmission
+        send_byte_buffer[ind++] = 0x00; //filler
+
+
+        FIFOI2C_addQueue(device, send_byte_buffer, state_buffer, ind);
     }
-
-    //Send value to write to register
-    state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
-    send_byte_buffer[ind++] = byte_buffer[i];
-
-
-    //Master sends STOP
-    state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_STOP;
-    send_byte_buffer[ind++] = 0x00; //filler
-
-
-    //Required for IRQ to know when to stop
-    state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_CMDEND; //Signifys end of transmission
-    send_byte_buffer[ind++] = 0x00; //filler
-
-
-    FIFOI2C_addQueue(device, send_byte_buffer, state_buffer, ind);
+    else
+    {
+        return -1;
+    }
 }
+// </editor-fold>
 
-
+// <editor-fold defaultstate="collapsed" desc="Interrupt Request Routines">
 void __ISR(_I2C_2_VECTOR, IPL4AUTO) __I2C2Interrupt(void)
 {
 
@@ -455,9 +457,9 @@ void __ISR(_I2C_2_VECTOR, IPL4AUTO) __I2C2Interrupt(void)
                 break;
             case FIFOI2C_DEVICE_COMMAND_CMDEND:
                 //Loop through all devices and check if they have something (or more somethings) to send.
-                
+
                 //Check Current Device first
-                if ((FIFOI2C_Devices_List[FIFOI2C_currentDevice].transmit_buffer_current + 1) >= 
+                if ((FIFOI2C_Devices_List[FIFOI2C_currentDevice].transmit_buffer_current + 1) >=
                         FIFOI2C_Devices_List[FIFOI2C_currentDevice].transmit_buffer_length) //Nothing to send
                 {
                     //Turn it off device
@@ -473,7 +475,7 @@ void __ISR(_I2C_2_VECTOR, IPL4AUTO) __I2C2Interrupt(void)
                         //If not this device (since we already checked it)
                         if (i != FIFOI2C_currentDevice)
                         {
-                            if(FIFOI2C_Devices_List[i].transmit_buffer_length > 
+                            if(FIFOI2C_Devices_List[i].transmit_buffer_length >
                                     FIFOI2C_Devices_List[i].transmit_buffer_current) //If they have something to send
                             {
                                 //Set device as the current device
@@ -495,7 +497,7 @@ void __ISR(_I2C_2_VECTOR, IPL4AUTO) __I2C2Interrupt(void)
                     //Keep it running
                     INTSetFlag(INT_I2C2M);
                 }
-                
+
                 break;
 
             default:
@@ -505,6 +507,8 @@ void __ISR(_I2C_2_VECTOR, IPL4AUTO) __I2C2Interrupt(void)
         //Increment next byte to interpret
         FIFOI2C_Devices_List[FIFOI2C_currentDevice].transmit_buffer_current++;
     }
-    
+
 }
+
+// </editor-fold>
 

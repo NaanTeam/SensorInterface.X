@@ -15,55 +15,58 @@ extern "C" {
     #include "FIFOSPI2.h"
     #include "Hardware.h"
 
+    // <editor-fold defaultstate="collapsed" desc="Device #defines">
     /**Device identification registe.r*/
     #define L3G4200D_Reg_WHOAMI  0x0F
-    /**Control register one.*/
+        /**Control register one.*/
     #define L3G4200D_Reg_CTRLREG1  0x20
         /**Output Data Rate selection.*/
-        #define L3G4200D_RegBit_DR 6 //2 bits
+    #define L3G4200D_RegBit_DR 6 //2 bits
         /**Bandwidth selection.*/
-        #define L3G4200D_RegBit_BW 4 //2 bits
+    #define L3G4200D_RegBit_BW 4 //2 bits
         /**Power down mode enable.*/
-        #define L3G4200D_RegBit_PD 3
+    #define L3G4200D_RegBit_PD 3
         /**Z axis enable.*/
-        #define L3G4200D_RegBit_Zen 2
+    #define L3G4200D_RegBit_Zen 2
         /**Y axis enable.*/
-        #define L3G4200D_RegBit_Yen 1
+    #define L3G4200D_RegBit_Yen 1
         /**x axis enable.*/
-        #define L3G4200D_RegBit_Xen 0
-    /**Control register two.*/
+    #define L3G4200D_RegBit_Xen 0
+        /**Control register two.*/
     #define L3G4200D_Reg_CTRLREG2  0x21
-    /**Control register three.*/
+        /**Control register three.*/
     #define L3G4200D_Reg_CTRLREG3  0x22
-    /**Control register four.*/
+        /**Control register four.*/
     #define L3G4200D_Reg_CTRLREG4  0x23
         /** Full Scale Selection. 2 bits.*/
-        #define L3G4200D_RegBit_FS 4
+    #define L3G4200D_RegBit_FS 4
         /** Self Test. 2 bits.*/
-        #define L3G4200D_RegBit_ST 1
-    /**Control register five.*/
+    #define L3G4200D_RegBit_ST 1
+        /**Control register five.*/
     #define L3G4200D_Reg_CTRLREG5  0x24
-    /**Reference value register for Interrupt generation.*/
+        /**Reference value register for Interrupt generation.*/
     #define L3G4200D_Reg_REF  0x25
-    /**Temperature data register.*/
+        /**Temperature data register.*/
     #define L3G4200D_Reg_OUTTEMP  0x26
     #define L3G4200D_Reg_STATUSREG  0x27
-    /** Lower X-axis angular rate data. The value is expressed as two?s complement.*/
+        /** Lower X-axis angular rate data. The value is expressed as two?s complement.*/
     #define L3G4200D_Reg_OUTXL  0x28
-    /** Higher X-axis angular rate data. The value is expressed as two?s complement.*/
+        /** Higher X-axis angular rate data. The value is expressed as two?s complement.*/
     #define L3G4200D_Reg_OUTXH  0x29
-    /** Lower Y-axis angular rate data. The value is expressed as two?s complement.*/
+        /** Lower Y-axis angular rate data. The value is expressed as two?s complement.*/
     #define L3G4200D_Reg_OUTYL  0x2A
-    /** Higher Y-axis angular rate data. The value is expressed as two?s complement.*/
+        /** Higher Y-axis angular rate data. The value is expressed as two?s complement.*/
     #define L3G4200D_Reg_OUTYH  0x2B
-    /** Lower Z-axis angular rate data. The value is expressed as two?s complement.*/
+        /** Lower Z-axis angular rate data. The value is expressed as two?s complement.*/
     #define L3G4200D_Reg_OUTZL  0x2C
-    /** Higher Z-axis angular rate data. The value is expressed as two?s complement.*/
+        /** Higher Z-axis angular rate data. The value is expressed as two?s complement.*/
     #define L3G4200D_Reg_OUTZH  0x2D
-    /**FIFO buffer control register.*/
+        /**FIFO buffer control register.*/
     #define L3G4200D_Reg_FIFOCTRLREG  0x2E
-    //... Additional interrupt registers that I didn't include.
-    
+    //... Additional interrupt registers that I didn't include.// </editor-fold>
+
+
+    // <editor-fold defaultstate="collapsed" desc="Global variables">
     /**Global variable that contains gyroscope's X-axis data.*/
     extern double L3G4200D_XAxis;
     /**Global variable that contains gyroscope's Y-axis data.*/
@@ -71,13 +74,15 @@ extern "C" {
     /**Global variable that contains gyroscope's Z-axis data.*/
     extern double L3G4200D_ZAxis;
     /**Global variable that contains gyroscope's temperature data.*/
-    extern double L3G4200D_Temperature;
+    extern double L3G4200D_Temperature; // </editor-fold>
 
+
+    // <editor-fold defaultstate="collapsed" desc="Function prototypes">
     /**
      * Sets up and turns on the L3G4200D for measurement reading.
      * @return -1 if the device is not commuicating properly.
      */
-    int L3G4200D_StartMeasurements();
+    int L3G4200D_startMeasurements();
 
     /**
      * Queues a write-to-register command for the L3G4200D in the FIFOSPI.c buffer.
@@ -108,15 +113,16 @@ extern "C" {
     unsigned char L3G4200D_ReadRegister_Blocking(unsigned char reg);
 
     /**
-     * Queues a read X, Y, Z and temperature data register command for the 
+     * Queues a read X, Y, Z and temperature data register command for the
      * L3G4200D in the FIFOSPI buffer.
      */
-    void L3G4200D_QueueReadXYZT();
+    void L3G4200D_queueReadXYZT();
     /**
      * Interpret's the read X, Y, Z and temperature data register command for
      * the L3G4200D from the FIFOSPI buffer.
      */
-    void L3G4200D_InterpretXYZT();
+    void L3G4200D_interpretXYZT(); // </editor-fold>
+
 
 #ifdef	__cplusplus
 }

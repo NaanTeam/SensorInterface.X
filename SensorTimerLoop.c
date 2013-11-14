@@ -25,9 +25,9 @@ void SensorLoop_SetupAll()
 
     INTEnableInterrupts();
     //Setup Accelerometer
-    ADXL362_StartMeasurements();
+    ADXL362_startMeasurements();
     //Setup Gyroscope
-    L3G4200D_StartMeasurements();
+    L3G4200D_startMeasurements();
     //Setup 3-axis compass
     HMC5883L_startMeasurements();
     //Give them time to setup.
@@ -53,12 +53,12 @@ void SensorLoop_SetupAll()
 //IRQ for timer1. Used for polling sensors.
 void __ISR(_TIMER_1_VECTOR, IPL3AUTO) Timer1Handler(void)
 {
-    L3G4200D_InterpretXYZT();   
-    ADXL362_InterpretXYZT(); //Interpret the previous one.
+    L3G4200D_interpretXYZT();
+    ADXL362_interpretXYZT(); //Interpret the previous one.
     HMC5883L_interpretXZY();
 
-    L3G4200D_QueueReadXYZT();
-    ADXL362_QueueReadXYZT();
+    L3G4200D_queueReadXYZT();
+    ADXL362_queueReadXYZT();
     HMC5883L_queueReadXZY();
 
 

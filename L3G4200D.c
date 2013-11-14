@@ -12,7 +12,7 @@ double L3G4200D_YAxis = 0;
 double L3G4200D_ZAxis = 0;
 double L3G4200D_Temperature = 0;
 
-int L3G4200D_StartMeasurements()
+int L3G4200D_startMeasurements()
 {
     //Check to see if we are communicating correctly.
     if (L3G4200D_ReadRegister_Blocking(L3G4200D_Reg_WHOAMI) != 0xD3)
@@ -118,7 +118,7 @@ unsigned char L3G4200D_ReadRegister_Blocking(unsigned char reg)
 }
 
 
-void L3G4200D_QueueReadXYZT()
+void L3G4200D_queueReadXYZT()
 {
     
     L3G4200D_QueueReadRegister(L3G4200D_Reg_OUTXL);
@@ -131,7 +131,7 @@ void L3G4200D_QueueReadXYZT()
     
 }
 
-void L3G4200D_InterpretXYZT()
+void L3G4200D_interpretXYZT()
 {
     uint8 func_rslt, fluff;
     
