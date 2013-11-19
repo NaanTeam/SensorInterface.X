@@ -20,10 +20,12 @@ extern "C" {
     #include "L3G4200D.h"
     #include "HMC5883L.h"
 
-    #define SERIALCOMM_START_TOKEN 0x01
-    #define SERIALCOMM_READ_REGISTER 0x02
-    #define SERIALCOMM_WRITE_REGISTER 0x03
-    #define SERIALCOMM_END_TOKEN 0xFF
+    #define SERIALCOMM_START_TOKEN      0x01
+    #define SERIALCOMM_READ_REGISTER    0x02
+    #define SERIALCOMM_WRITE_REGISTER   0x03
+
+    #define SERIALCOMM_MOTOR1_ON        0x10
+    #define SERIALCOMM_END_TOKEN        0xFF
 
 
     #define SERIALCOMM_REGISTER_XAcceleration       0x10

@@ -58,7 +58,11 @@ void SerialComm_readRegistersRoutine()
 
         switch(register_address)
         {
+            default:
+                len = 15;
+                return;
             case SERIALCOMM_END_TOKEN:
+                len = 15;
                 return;
 
             //Accelerometer
@@ -99,15 +103,15 @@ void SerialComm_readRegistersRoutine()
 
             //3-axis Compass
             case SERIALCOMM_REGISTER_XMagneticVector:
-                len = sprintf (buffer, "%f", HMC5883L_XMagneticVector);
+                len = sprintf (buffer, "%f\n", HMC5883L_XMagneticVector);
                 FIFOUART_sendBuffer(buffer, len);
                 break;
             case SERIALCOMM_REGISTER_YMagneticVector:
-                len = sprintf (buffer, "%f", HMC5883L_YMagneticVector);
+                len = sprintf (buffer, "%f\n", HMC5883L_YMagneticVector);
                 FIFOUART_sendBuffer(buffer, len);
                 break;
             case SERIALCOMM_REGISTER_ZMagneticVector:
-                len = sprintf (buffer, "%f", HMC5883L_ZMagneticVector);
+                len = sprintf (buffer, "%f\n", HMC5883L_ZMagneticVector);
                 FIFOUART_sendBuffer(buffer, len);
                 break;
         }

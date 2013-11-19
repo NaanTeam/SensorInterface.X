@@ -134,10 +134,11 @@
 
     
 void UART_setup(void){
+    int b = 0;
     UARTConfigure(UART_MODULE_ID, UART_ENABLE_PINS_TX_RX_ONLY);
-    UARTSetFifoMode(UART_MODULE_ID, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
+    //UARTSetFifoMode(UART_MODULE_ID, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
     UARTSetLineControl(UART_MODULE_ID, UART_DATA_SIZE_8_BITS | UART_PARITY_NONE | UART_STOP_BITS_1);
-    UARTSetDataRate(UART_MODULE_ID, GetPeripheralClock(), 9600);
+    b = UARTSetDataRate(UART_MODULE_ID, GetPeripheralClock(), 9600);
     UARTEnable(UART_MODULE_ID, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
 }
 
@@ -167,30 +168,30 @@ int main(int argc, char** argv)
 
     SerialComm_start();
 
-    while(1)
-    {
-        
-        DelayTime(1000);
-        char buff[50];
-
-        sprintf(buff, "-------------------------------------------------------\n\r");
-        putsUART1(buff);
-
-        sprintf(buff, " X Accel: %f \n\r Y_Accel: %f \n\r Z_Accel: %f \n\r Temp: %f \n\r\n\r",
-                ADXL362_XAcceleration, ADXL362_YAcceleration, ADXL362_ZAcceleration, ADXL362_Temperature);
-        putsUART1(buff);
-        
-
-        sprintf(buff, " X Gyro: %f \n\r Y Gyro: %f \n\r Z Gyro:: %f \n\r Temp: %f \n\r\n\r",
-                L3G4200D_XAngularRate, L3G4200D_YAngularRate, L3G4200D_ZAngularRate, L3G4200D_Temperature);
-        putsUART1(buff);
-
-        
-        sprintf(buff, " X Comp: %f \n\r Y Comp: %f \n\r Z Comp: %f \n\r\n\r",
-                HMC5883L_XMagneticVector, HMC5883L_ZMagneticVector, HMC5883L_YMagneticVector);
-        putsUART1(buff);
-
-    }
+//    while(1)
+//    {
+//
+//        DelayTime(1000);
+//        char buff[50];
+//
+//        sprintf(buff, "-------------------------------------------------------\n\r");
+//        putsUART1(buff);
+//
+//        sprintf(buff, " X Accel: %f \n\r Y_Accel: %f \n\r Z_Accel: %f \n\r Temp: %f \n\r\n\r",
+//                ADXL362_XAcceleration, ADXL362_YAcceleration, ADXL362_ZAcceleration, ADXL362_Temperature);
+//        putsUART1(buff);
+//
+//
+//        sprintf(buff, " X Gyro: %f \n\r Y Gyro: %f \n\r Z Gyro:: %f \n\r Temp: %f \n\r\n\r",
+//                L3G4200D_XAngularRate, L3G4200D_YAngularRate, L3G4200D_ZAngularRate, L3G4200D_Temperature);
+//        putsUART1(buff);
+//
+//
+//        sprintf(buff, " X Comp: %f \n\r Y Comp: %f \n\r Z Comp: %f \n\r\n\r",
+//                HMC5883L_XMagneticVector, HMC5883L_ZMagneticVector, HMC5883L_YMagneticVector);
+//        putsUART1(buff);
+//
+//    }
 
     return (EXIT_SUCCESS);
 }

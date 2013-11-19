@@ -16,7 +16,7 @@ void FIFOI2C_initialize()
     int device = 0;
 
     //Interrupt Stuff
-    INTSetVectorPriority(INT_I2C_2_VECTOR, INT_PRIORITY_LEVEL_4);
+    INTSetVectorPriority(INT_I2C_2_VECTOR, INT_PRIORITY_LEVEL_5);
     INTSetVectorSubPriority(INT_I2C_2_VECTOR, INT_SUB_PRIORITY_LEVEL_0);
 
     INTClearFlag(INT_I2C2B);
@@ -388,7 +388,7 @@ uint8 FIFOI2C_addQueue_writeDeviceRegisters(uint16 device, uint8 start_register,
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="Interrupt Request Routines">
-void __ISR(_I2C_2_VECTOR, IPL4AUTO) __I2C2Interrupt(void)
+void __ISR(_I2C_2_VECTOR, IPL5AUTO) __I2C2Interrupt(void)
 {
 
     int i = 0;
