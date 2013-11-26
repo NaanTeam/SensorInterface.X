@@ -10,11 +10,13 @@
 #include <plib.h>
 #include <peripheral/ports.h>
 
+#include "Hardware.h"
+
 #include "SensorTimerLoop.h"
 #include "ADXL362.h"
 #include "L3G4200D.h"
 #include "FIFOSPI2.h"
-#include "Hardware.h"
+#include "HMC5883L.h"
 
 
 // <editor-fold defaultstate="collapsed" desc="Config Bits">
@@ -146,7 +148,7 @@ void UART_setup(void){
 void DelayTime(int ms)
 {
     int i = 0;
-    while (i < (ms*1000))
+    while (i < (ms*6000))
     {
         i++;
     }
@@ -155,18 +157,16 @@ void DelayTime(int ms)
 
 int main(int argc, char** argv)
 {
-//    char buffer[32];
-//    char b = 'g';
-//    int a3=5, b3=3;
-//    b = 'k';
-//    double fg = 9.6654346;
-//    //sprintf (buffer, "%d plus %d is %d", a3, b3, a3+b3);
-//    sprintf (buffer, "%f", fg);
-    UART_setup();
 
+    UART_setup();
+    //Configures system for optimum preformance without changing PB divider
+    //SYSTEMConfig(GetSystemClock(), SYS_CFG_PCACHE | SYS_CFG_WAIT_STATES);
+    
     SensorLoop_SetupAll();
 
     SerialComm_start();
+
+
 
 //    while(1)
 //    {

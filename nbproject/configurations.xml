@@ -36,6 +36,7 @@
                    projectFiles="false">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
+    <itemPath>Readme.md</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -45,7 +46,7 @@
         <targetDevice>PIC32MX320F128H</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>PK3OBPlatformTool</platformTool>
+        <platformTool>Simulator</platformTool>
         <languageToolchain>XC32</languageToolchain>
         <languageToolchainVersion>1.21</languageToolchainVersion>
         <platform>3</platform>
@@ -146,29 +147,8 @@
         <property key="save-temps" value="false"/>
         <property key="wpo-lto" value="false"/>
       </C32Global>
-      <PK3OBPlatformTool>
-        <property key="AutoSelectMemRanges" value="auto"/>
-        <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
-        <property key="ToolFirmwareFilePath"
-                  value="Press to browse for a specific firmware version"/>
-        <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
-        <property key="memories.bootflash" value="false"/>
-        <property key="memories.configurationmemory" value="false"/>
-        <property key="memories.eeprom" value="false"/>
-        <property key="memories.id" value="false"/>
-        <property key="memories.programmemory" value="true"/>
-        <property key="memories.programmemory.end" value="0x1d01ffff"/>
-        <property key="memories.programmemory.start" value="0x1d000000"/>
-        <property key="poweroptions.powerenable" value="false"/>
-        <property key="programoptions.eraseb4program" value="true"/>
-        <property key="programoptions.preserveeeprom" value="false"/>
-        <property key="programoptions.preserveprogramrange" value="false"/>
-        <property key="programoptions.preserveprogramrange.end" value="0x1d0001ff"/>
-        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
-        <property key="programoptions.usehighvoltageonmclr" value="false"/>
-        <property key="programoptions.uselvpprogramming" value="false"/>
-        <property key="voltagevalue" value="3.25"/>
-      </PK3OBPlatformTool>
+      <Simulator>
+      </Simulator>
     </conf>
     <conf name="PIC32MX695F512L" type="2">
       <toolsSet>
@@ -176,7 +156,7 @@
         <targetDevice>PIC32MX695F512L</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>PK3OBPlatformTool</platformTool>
+        <platformTool>Simulator</platformTool>
         <languageToolchain>XC32</languageToolchain>
         <languageToolchainVersion>1.21</languageToolchainVersion>
         <platform>3</platform>
@@ -277,29 +257,8 @@
         <property key="save-temps" value="false"/>
         <property key="wpo-lto" value="false"/>
       </C32Global>
-      <PK3OBPlatformTool>
-        <property key="AutoSelectMemRanges" value="auto"/>
-        <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
-        <property key="ToolFirmwareFilePath"
-                  value="Press to browse for a specific firmware version"/>
-        <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
-        <property key="memories.bootflash" value="false"/>
-        <property key="memories.configurationmemory" value="false"/>
-        <property key="memories.eeprom" value="false"/>
-        <property key="memories.id" value="false"/>
-        <property key="memories.programmemory" value="true"/>
-        <property key="memories.programmemory.end" value="0x1d01ffff"/>
-        <property key="memories.programmemory.start" value="0x1d000000"/>
-        <property key="poweroptions.powerenable" value="false"/>
-        <property key="programoptions.eraseb4program" value="true"/>
-        <property key="programoptions.preserveeeprom" value="false"/>
-        <property key="programoptions.preserveprogramrange" value="false"/>
-        <property key="programoptions.preserveprogramrange.end" value="0x1d0001ff"/>
-        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
-        <property key="programoptions.usehighvoltageonmclr" value="false"/>
-        <property key="programoptions.uselvpprogramming" value="false"/>
-        <property key="voltagevalue" value="3.25"/>
-      </PK3OBPlatformTool>
+      <Simulator>
+      </Simulator>
     </conf>
     <conf name="Simulation_PIC32MX695F512L" type="2">
       <toolsSet>
@@ -409,33 +368,6 @@
         <property key="wpo-lto" value="false"/>
       </C32Global>
       <Simulator>
-        <property key="breakoptions.coreerrors" value="Ignore"/>
-        <property key="breakoptions.corewarnings" value="Ignore"/>
-        <property key="breakoptions.peripheralerrors" value="Ignore"/>
-        <property key="breakoptions.peripheralwarnings" value="Ignore"/>
-        <property key="breakoptions.stimulusmessages.notes" value="Ignore"/>
-        <property key="breakoptions.stimulusmessags.errors" value="Ignore"/>
-        <property key="breakoptions.stimulusmessags.warnings" value="Ignore"/>
-        <property key="breakoptions.wdtwarnings" value="Ignore"/>
-        <property key="codecoverage.enabled" value="Disable"/>
-        <property key="codecoverage.enableoutputtofile" value="false"/>
-        <property key="codecoverage.outputfile" value=""/>
-        <property key="oscillator.auxfrequency" value="120"/>
-        <property key="oscillator.auxfrequencyunit" value="Mega"/>
-        <property key="oscillator.frequency" value="1"/>
-        <property key="oscillator.frequencyunit" value="Mega"/>
-        <property key="oscillator.rcfrequency" value="250"/>
-        <property key="oscillator.rcfrequencyunit" value="Kilo"/>
-        <property key="performancedata.show" value="false"/>
-        <property key="periphADC1.altscl" value="false"/>
-        <property key="periphADC1.minTacq" value="132"/>
-        <property key="periphADC1.tacqunits" value="microseconds"/>
-        <property key="periphADC2.altscl" value="false"/>
-        <property key="periphADC2.minTacq" value=""/>
-        <property key="periphADC2.tacqunits" value="microseconds"/>
-        <property key="uart1io.output" value="window"/>
-        <property key="uart1io.outputfile" value=""/>
-        <property key="uart1io.uartioenabled" value="false"/>
       </Simulator>
     </conf>
   </confs>

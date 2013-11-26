@@ -1,54 +1,53 @@
-
+/**
+ * @file: FIFOI2C.h
+ * @brief: A FIFO interrupt driven I2C communication method with this device
+ * setup as the master.
+ *
+ * @author: Connor Martin
+ * @date: Nov 10, 2013
+ *
+ * @preconditions:
+ * @device:
+ *      -PIC32MX695F512L
+ *          -Uses I2C2, the second I2C module.
+ *
+ * @remarks:
+ */
 #include "FIFOI2C.h"
 
 
-// <editor-fold defaultstate="collapsed" desc="Local Variable and Typedef Declarations">
+//******************************************************************************
+//Local Variable and Typedef Declarations
+//******************************************************************************
 static FIFOI2C_Device FIFOI2C_Devices_List[FIFOI2C_DEVICES_COUNT];
 static uint8 FIFOI2C_isRunning = 0;
 static uint16 FIFOI2C_currentDevice = 0;
 static uint8 FIFOI2C_nextInterruptReceive = 0;
-// </editor-fold>
-    
-// <editor-fold defaultstate="collapsed" desc="Public Function Definitions">
+
+
+
+//******************************************************************************
+//Public Function Definitions
+//******************************************************************************
 void FIFOI2C_initialize()
 {
     int i = 0;
     int device = 0;
-
+    
     //Interrupt Stuff
     INTSetVectorPriority(INT_I2C_2_VECTOR, INT_PRIORITY_LEVEL_5);
     INTSetVectorSubPriority(INT_I2C_2_VECTOR, INT_SUB_PRIORITY_LEVEL_0);
 
     INTClearFlag(INT_I2C2B);
-    //INTClearFlag(INT_I2C2S);
     INTClearFlag(INT_I2C2M);
 
-    /*Bus Collision events that generate an interrupt are:
-        ?During a Start sequence ? SDAx sampled before Start condition
-        ?During a Start sequence ? SCLx = 0 before SDAx = 0
-        ?During a Start sequence ? SDAx = 0 before BRG time out
-        ?During a Repeated Start sequence ? If SDAx is sampled 0 when SCLx goes high
-        ?During a Repeated Start sequence ? If SCLx goes low before SDAx goes low
-        ?During a Stop sequence ? If SDAx is sampled low after allowing it to float
-        ?During a Stop sequence ? If SCLx goes low before SDAx goes high*/
-    INTEnable(INT_I2C2B, INT_ENABLED); //I2C2 Bus Collision Event
-    /*Detection of a valid device address (including general call) ? Ninth falling edge of SCLx
-        (after sending ACK to master. Address must match unless the STRICT bit = 1 (I2CxCON<11>) or the GCEN bit =1 (I2CxCON<7>)
-        ?Reception of data ? Ninth falling edge of SCLx (after sending the ACK to master)
-        ?Request to transmit data ? Ninth falling edge of SCLx (regardless of receiving an ACK from the master)*/
-    //INTEnable(INT_I2C2S, INT_ENABLED); //I2C2 Slave Event
-    /*Master mode operations that generate a master interrupt are:
-        ?Start Condition ? 1 BRG time after falling edge of SDAx
-        ?Repeated Start Sequence ? 1 BRG time after falling edge of SDAx
-        ?Stop Condition ? 1 BRG time after the rising edge of SDAx
-        ?Data transfer byte received ? Eighth falling edge of SCLx (after receiving eight bits of data from slave)
-        ?During a Send ACK sequence ? Ninth falling edge of SCLx (after sending ACK or NACK to slave)
-        ?Data transfer byte transmitted ? Ninth falling edge of SCLx (regardless of receiving ACK from slave)
-        ?During a slave-detected Stop ? When slave sets the P bit (I2CxSTAT<4>)*/
-    INTEnable(INT_I2C2M, INT_ENABLED); //I2C2 Master Event
+    //Enable I2C Bus Collision Event interrupt
+    INTEnable(INT_I2C2B, INT_ENABLED);
+    //Enable I2C2 Master Event interrupt
+    INTEnable(INT_I2C2M, INT_ENABLED);
 
 
-    //Initialize Devices
+    //Initialize each device's local variables
     #if FIFOI2C_DEVICES_COUNT >= 1
         device = 0;
         FIFOI2C_Devices_List[device].address = FIFOI2C_DEVICE0_ADDRESS;
@@ -177,15 +176,16 @@ void FIFOI2C_initialize()
 
 
     //configure the clock for the I2C2
-
     I2C2BRG = (1.0/(2.0*FIFOI2C_BAUD_RATE) - 104e-9) * GetPeripheralClock() - 1.5; //-1.5 takes into account rounding for -2.
-    //Enable I2C2 Module
+
+    //Turns on the I2C2 Module
     I2C2CONbits.ON = 1;
 }
 
 uint8 FIFOI2C_addQueue(uint16 device, uint8 byte_buffer[], FIFOI2C_Device_Commands state_buffer[], uint32 buffer_length)
 {
     int i = 0, ind = 0;
+    FIFOI2C_TX_Byte txb;
 
     //Check for potential overflow of the TX buffer.
     if ((FIFOI2C_Devices_List[device].transmit_buffer_length + buffer_length) >= (FIFOI2C_TRANSMIT_BUFFER_SIZE - 1))
@@ -194,13 +194,16 @@ uint8 FIFOI2C_addQueue(uint16 device, uint8 byte_buffer[], FIFOI2C_Device_Comman
     }
     else
     {
-        //Adds the byte and state buffers to the Device's buffer
+        //Adds the byte and state buffers to the Device's transmit buffer
         while (i < buffer_length)
         {
-            FIFOI2C_TX_Byte txb;
+            //Selects this i-th byte
             txb.tx_byte = byte_buffer[i];
+            //Selects the i-th command
             txb.device_command = state_buffer[i];
+            //Sets the index to the current device's transmit buffer length
             ind = FIFOI2C_Devices_List[device].transmit_buffer_length;
+            //transfer the byte to the current devices buffer
             FIFOI2C_Devices_List[device].transmit_buffer[ind] = txb;
             FIFOI2C_Devices_List[device].transmit_buffer_length++;
             i++;
@@ -227,21 +230,25 @@ FIFOI2C_RX_Byte FIFOI2C_readQueue(uint16 device)
     //Checks for read-overflow error
     if (FIFOI2C_Devices_List[device].receive_buffer_length >= (FIFOI2C_RECEIVE_BUFFER_SIZE - 1))
     {
+        //Sets the received byte to indicate an error
         rxb.device_command = FIFOI2C_DEVICE_COMMAND_CMDERROR;
         rxb.rx_byte = 0;
     }
     else
     {
+        //Sets the index to the current length of the receive buffer
         ind = FIFOI2C_Devices_List[device].receive_buffer_current;
+        //pulls the received byte to a local variable
         rxb.device_command = FIFOI2C_Devices_List[device].receive_buffer[ind].device_command;
         rxb.rx_byte = FIFOI2C_Devices_List[device].receive_buffer[ind].rx_byte;
+        //increments how many bytes have been read by (for the device)
         FIFOI2C_Devices_List[device].receive_buffer_current++;
 
 
         //If all the bytes have been read from the receive buffer reset the indexes
         if (FIFOI2C_Devices_List[device].receive_buffer_current >= FIFOI2C_Devices_List[device].receive_buffer_length)
         {
-            //Sensitive Code. Disable temporarily masterinterrupt (if it's enabled.)
+            //Sensitive Code. Disable temporarily master interrupt (if it's enabled.)
             if (INTGetEnable(INT_I2C2M) != 0)
             {
                 INTEnable(INT_I2C2M, INT_DISABLED);
@@ -257,7 +264,8 @@ FIFOI2C_RX_Byte FIFOI2C_readQueue(uint16 device)
 
         }
 
-        return rxb; //Return the received byte.
+        //Return the received byte
+        return rxb;
     }
 }
 
@@ -268,66 +276,74 @@ uint8 FIFOI2C_addQueue_readDeviceRegisters(uint16 device, uint8 start_register, 
     int j = 0; 
     uint8 byte_buffer[FIFOI2C_TRANSMIT_BUFFER_SIZE];
     FIFOI2C_Device_Commands state_buffer[FIFOI2C_TRANSMIT_BUFFER_SIZE];
+
+    //If their are bytes actually requeste to read
     if (number_to_read > 0)
     {
-        //Start
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_START; //Start it
-        byte_buffer[ind++] = 0x13; //filler
+        //Start the I2C device
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_START;
+        byte_buffer[ind++] = 0x00; //filler
 
+        //Transmit byte: Device Addr + write
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE;
+        byte_buffer[ind++] = (FIFOI2C_Devices_List[device].address << 1) |
+                0x00; //LSB is 0 to inicate a write
 
-        //Device Addr + write
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
-        byte_buffer[ind++] = (FIFOI2C_Devices_List[device].address << 1) | 0x00;
-
-        //Send Start Register Address
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
+        //Transmit byte: The start register address
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE;
         byte_buffer[ind++] = start_register;
 
-        //restart
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_RESTART; //Transmit Byte
+        ////Restart the I2C process
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_RESTART; 
         byte_buffer[ind++] = 0x00; //filler
 
 
-        //Device Address + Read
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
-        byte_buffer[ind++] = (FIFOI2C_Devices_List[device].address << 1) | 0x01;
+        //Transmit byte: Device Address + Read
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE;
+        byte_buffer[ind++] = (FIFOI2C_Devices_List[device].address << 1) | 
+                0x01; //LSB is 1 to inicate a read
 
+        //If their are more than 1 'read' requests to send then this routine runs.
+        //Basically it continues to add read requests.
         while (i < (number_to_read - 1))
         {
-            //Sensor sends data (receive byte routine)
-            state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_RX_BYTE; //Receive Byte
+            //Run the receive byte routine because the slave device (should of)
+            //sent a byte back to after the request
+            state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_RX_BYTE;
             byte_buffer[ind++] = 0x00; //filler
 
-            //Master send ACK
-            state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_ACK; //Receive Byte
+            //Master send ACK because it received data
+            state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_ACK; 
             byte_buffer[ind++] = 0x00; //filler
 
             i++;
         }
 
         //Sensor sends data (receive byte routine)
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_RX_BYTE; //Receive Byte
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_RX_BYTE;
         byte_buffer[ind++] = 0x00; //filler
 
-        //Master send NACK
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_NACK; //Receive Byte
+        //Master send NACK to end burst read routine
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_NACK;
         byte_buffer[ind++] = 0x00; //filler
 
-        //Master sends STOP
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_STOP; //Receive Byte
+        //Master sends STOP to end the I2C routine
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_STOP;
         byte_buffer[ind++] = 0x00; //filler
 
-        //Required for IRQ to know when to stop
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_CMDEND; //Signifys end of transmission
+        //Required for the I2C IRQ to know when to stop.
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_CMDEND;
         byte_buffer[ind++] = 0x00; //filler
 
 
+        //Adds these commands to the device's TX buffer and starts the IRQ
         FIFOI2C_addQueue(device, byte_buffer, state_buffer, ind);
 
         return 0;
     }
     else
     {
+        //If their aren't any read requests. Return -1.
         return -1;
     }
 }
@@ -338,33 +354,34 @@ uint8 FIFOI2C_addQueue_writeDeviceRegisters(uint16 device, uint8 start_register,
     uint8 send_byte_buffer[FIFOI2C_TRANSMIT_BUFFER_SIZE];
     FIFOI2C_Device_Commands state_buffer[FIFOI2C_TRANSMIT_BUFFER_SIZE];
 
-    if ((FIFOI2C_Devices_List[device].transmit_buffer_length + buffer_length) >= (FIFOI2C_TRANSMIT_BUFFER_SIZE - 1))
+    if ((FIFOI2C_Devices_List[device].transmit_buffer_length + buffer_length) <= (FIFOI2C_TRANSMIT_BUFFER_SIZE - 1))
     {
-        //Start
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_START; //Start it
-        send_byte_buffer[ind++] = 0x13; //filler
+        //Start the I2C device
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_START;
+        send_byte_buffer[ind++] = 0x00; //filler
 
-        //Device Addr + write
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
-        send_byte_buffer[ind++] = (FIFOI2C_Devices_List[device].address << 1) | 0x00;
+        //Transmit byte: Device Addr + write
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE;
+        send_byte_buffer[ind++] = (FIFOI2C_Devices_List[device].address << 1) |
+                0x00; //LSB is 0 to inicate a write
 
-        //Send Start Register Address
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
+        //Transmit byte: The start register address
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE;
         send_byte_buffer[ind++] = start_register;
 
+        //If their are more than 1 'write' requests to send then this routine runs.
+        //Basically it continues to add write requests.
         while (i < (buffer_length - 1))
         {
-            //Send value to write to register
-            state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
+            //Transmit byte: Send value to write to register
+            state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE;
             send_byte_buffer[ind++] = byte_buffer[i];
-
-            //Do I need a Recieved_ACK cmd?
 
             i++;
         }
 
-        //Send value to write to register
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; //Transmit Byte
+        //Transmit byte: Send value to write to register
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_TX_BYTE; 
         send_byte_buffer[ind++] = byte_buffer[i];
 
 
@@ -373,21 +390,28 @@ uint8 FIFOI2C_addQueue_writeDeviceRegisters(uint16 device, uint8 start_register,
         send_byte_buffer[ind++] = 0x00; //filler
 
 
-        //Required for IRQ to know when to stop
-        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_CMDEND; //Signifys end of transmission
+        //Required for I2C IRQ to know when to stop
+        state_buffer[ind] = FIFOI2C_DEVICE_COMMAND_CMDEND;
         send_byte_buffer[ind++] = 0x00; //filler
 
 
+        //Adds these commands to the device's TX buffer and starts the IRQ
         FIFOI2C_addQueue(device, send_byte_buffer, state_buffer, ind);
+
+        return 0;
     }
     else
     {
+        //If their aren't any write requests. Return -1.
         return -1;
     }
 }
-// </editor-fold>
 
-// <editor-fold defaultstate="collapsed" desc="Interrupt Request Routines">
+
+
+//******************************************************************************
+//Interrupt Request Routines
+//******************************************************************************
 void __ISR(_I2C_2_VECTOR, IPL5AUTO) __I2C2Interrupt(void)
 {
 
@@ -399,6 +423,7 @@ void __ISR(_I2C_2_VECTOR, IPL5AUTO) __I2C2Interrupt(void)
     {
         INTClearFlag(INT_I2C2B);
 
+        //TODO: Set an error, or reset the transmission.
     }
     if (INTGetFlag(INT_I2C2M)) //Master Intterupt
     {
@@ -428,7 +453,7 @@ void __ISR(_I2C_2_VECTOR, IPL5AUTO) __I2C2Interrupt(void)
         switch(FIFOI2C_Devices_List[FIFOI2C_currentDevice].transmit_buffer[ind].device_command)
         {
             case FIFOI2C_DEVICE_COMMAND_CMDERROR:
-                ind = 5; //filler
+                ind = 0; //filler
                 break;
             case FIFOI2C_DEVICE_COMMAND_START:
                 I2C2CONbits.SEN = 1;    //start condition sequence
@@ -453,16 +478,16 @@ void __ISR(_I2C_2_VECTOR, IPL5AUTO) __I2C2Interrupt(void)
                 I2C2CONbits.ACKEN = 1;  //Send NACK sequence
                 break;
             case FIFOI2C_DEVICE_COMMAND_STOP:
-                I2C2CONbits.PEN = 1;
+                I2C2CONbits.PEN = 1;  //Stop routine
                 break;
             case FIFOI2C_DEVICE_COMMAND_CMDEND:
                 //Loop through all devices and check if they have something (or more somethings) to send.
 
                 //Check Current Device first
                 if ((FIFOI2C_Devices_List[FIFOI2C_currentDevice].transmit_buffer_current + 1) >=
-                        FIFOI2C_Devices_List[FIFOI2C_currentDevice].transmit_buffer_length) //Nothing to send
+                        FIFOI2C_Devices_List[FIFOI2C_currentDevice].transmit_buffer_length)
                 {
-                    //Turn it off device
+                    //Turn off I2C IRq routine
                     FIFOI2C_isRunning = 0;
 
                     //Reset transmit indexes
@@ -489,7 +514,7 @@ void __ISR(_I2C_2_VECTOR, IPL5AUTO) __I2C2Interrupt(void)
                         i++;
                     }
 
-                    //Done so quite routine.
+                    //Done so quit routine.
                     return;
                 }
                 else
@@ -504,11 +529,9 @@ void __ISR(_I2C_2_VECTOR, IPL5AUTO) __I2C2Interrupt(void)
                 break;
         }
 
-        //Increment next byte to interpret
+        //Increment next cmd to tx
         FIFOI2C_Devices_List[FIFOI2C_currentDevice].transmit_buffer_current++;
     }
 
 }
-
-// </editor-fold>
 

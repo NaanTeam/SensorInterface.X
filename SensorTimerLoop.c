@@ -11,10 +11,7 @@
 
 void SensorLoop_SetupAll()
 {
-    int i = 0;
 
-    //Enable toggle LED directional register
-    TRISFbits.TRISF0 = 0;
     // Enable multi-vector interrupts
     INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
 
@@ -30,9 +27,7 @@ void SensorLoop_SetupAll()
     L3G4200D_startMeasurements();
 //   //Setup 3-axis compass
     HMC5883L_startMeasurements();
-    //Give them time to setup.
-    while (i < 200000)
-        i++;
+
     INTDisableInterrupts();
 
 
