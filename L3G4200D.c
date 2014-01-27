@@ -66,7 +66,7 @@ void L3G4200D_QueueWriteRegister(unsigned char reg, unsigned char value)
     buff[0] = reg; //Register ADDR.. Defualt return: 11010011 .. 0xD3
     buff[0] &= 0x7F; //Sets the write flag
     buff[1] = value;
-    FIFOSPI2_SendQueue(buff, 2, 2);
+    FIFOSPI2_addQueue(buff, 2, 2);
 }
 void L3G4200D_QueueReadRegister(unsigned char reg)
 {
@@ -75,10 +75,10 @@ void L3G4200D_QueueReadRegister(unsigned char reg)
     //Sets the read flag
     buff[0] |= (1 << 7);
     buff[1] = 0x00; //Fluff
-    FIFOSPI2_SendQueue(buff, 2, 2);
+    FIFOSPI2_addQueue(buff, 2, 2);
 }
 
-//TODO: Tecnically not blocking. index could be >2 to start with...
+//TODO: Fix so I can get rid of ReceiveBufferIndex function
 void L3G4200D_WriteRegister_Blocking(unsigned char reg, unsigned char value)
 {
     //Control Register one
@@ -86,13 +86,13 @@ void L3G4200D_WriteRegister_Blocking(unsigned char reg, unsigned char value)
     buff[0] = reg; //Register ADDR.. Defualt return: 11010011 .. 0xD3
     buff[0] &= 0x7F; //Sets the write flag
     buff[1] = value;
-    FIFOSPI2_SendQueue(buff, 2, 2);
+    FIFOSPI2_addQueue(buff, 2, 2);
 
 
     char func_rslt, read_rslt;
-    while (FIFOSPI2_RecieveBufferIndex() < 2 || FIFOSPI2_isRunnning != 0) {}
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt);
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt);
+    while (FIFOSPI2_rxBufferIndex() < 2 || FIFOSPI2_isRunnning != 0) {}
+    func_rslt = FIFOSPI2_readQueue(&read_rslt);
+    func_rslt = FIFOSPI2_readQueue(&read_rslt);
 }
 
 
@@ -105,14 +105,14 @@ unsigned char L3G4200D_ReadRegister_Blocking(unsigned char reg)
     //Sets the read flag
     buff[0] |= (1 << 7);
     buff[1] = 0x00; //Fluff
-    FIFOSPI2_SendQueue(buff, 2, 2);
+    FIFOSPI2_addQueue(buff, 2, 2);
 
     
     //Force wait for the end of the transmission
     char func_rslt, read_rslt;
-    while (FIFOSPI2_RecieveBufferIndex() < 2 || FIFOSPI2_isRunnning != 0) {}
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt);
-    func_rslt = FIFOSPI2_ReadQueue(&read_rslt);
+    while (FIFOSPI2_rxBufferIndex() < 2 || FIFOSPI2_isRunnning != 0) {}
+    func_rslt = FIFOSPI2_readQueue(&read_rslt);
+    func_rslt = FIFOSPI2_readQueue(&read_rslt);
 
     return read_rslt;
 }
@@ -146,23 +146,23 @@ void L3G4200D_interpretXYZT()
 
 
     //X axis
-    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&x_lsb); //X low
-    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&x_msb); //X hi
+    func_rslt = FIFOSPI2_readQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_readQueue(&x_lsb); //X low
+    func_rslt = FIFOSPI2_readQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_readQueue(&x_msb); //X hi
     //Y axis
-    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&y_lsb); //Y low
-    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&y_msb); //Y hi
+    func_rslt = FIFOSPI2_readQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_readQueue(&y_lsb); //Y low
+    func_rslt = FIFOSPI2_readQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_readQueue(&y_msb); //Y hi
     //Z axis
-    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&z_lsb); //Z low
-    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&z_msb); //Z hi
+    func_rslt = FIFOSPI2_readQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_readQueue(&z_lsb); //Z low
+    func_rslt = FIFOSPI2_readQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_readQueue(&z_msb); //Z hi
     //Temperature
-    func_rslt = FIFOSPI2_ReadQueue(&fluff); //fluff
-    func_rslt = FIFOSPI2_ReadQueue(&temp); //Temp
+    func_rslt = FIFOSPI2_readQueue(&fluff); //fluff
+    func_rslt = FIFOSPI2_readQueue(&temp); //Temp
     
     
     x_16b = (x_msb << 8) | x_lsb;

@@ -16,8 +16,8 @@ void SensorLoop_SetupAll()
     INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
 
     //Setup SPI and I2C
-    FIFOSPI2_Setup();
-    FIFOI2C_initialize();
+    FIFOSPI2__initialize();
+    FIFOI2C2_initialize();
 
 
     INTEnableInterrupts();

@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-    #include "FIFOI2C.h"
+    #include "FIFOI2C2.h"
 
     extern double HMC5883L_XMagneticVector;
     extern double HMC5883L_ZMagneticVector;

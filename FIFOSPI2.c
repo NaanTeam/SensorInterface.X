@@ -1,57 +1,65 @@
 /**
- * @Author: Connor Martin
- * @Description: A FIFO interrupt driven spi communication method.
- *      SDIx: Serial Data Input
- *      SDOx: Serial Data Output
- *      SCKx: Shift Clock Input or Output
- *      SSx: Active-Low Slave Select or Frame Synchronization I/O Pulse
- * @Pins:
- *  Chipkit     PIC32MX3XX/4XX  Registers    Descritpion
- *  10          52              RD4          SS2 write
- *  11          6               RG8          SDO2 write
- *  12          5               RG7          SDI2 read
- *  13          4               RG6          SCK2 write
- * @Devices: PIC32MX320F128H
+ * @file: FIFOSPI2.h
+ * @brief: A 'First In First Out' interrupt driven SPI communication method
+ * with this device setup as the master.
+ *
+ * @author: Connor Martin
+ * @date: Nov 26, 2013
+ *
+ * @preconditions:
+ * @device:
+ *      -PIC32MX695F512L
+ *
+ * @remarks: Currently only supports 2 SPI devices. Some modifications need in
+ * the setup and IRQ needed to support more. (possibly other places as well)
+ *
  */
 
 #include "FIFOSPI2.h"
 
 
+//******************************************************************************
+// Local Variables and Typedefs
+//******************************************************************************
 
 //Flags
-unsigned char FIFOSPI2_isRunnning = 0; //Represents if the SPI2 is currently running
+uint8 FIFOSPI2_isRunnning = 0; //Represents if the SPI2 is currently running
 int isTransmitsTurn = 1; //used for toggling between transmit and receive 
 
 //Send buffers and indexes
-int SendBuffer_Index = 0; //Index of how full the send buffer is.
-int SendBuffer_SentIndex = 0; //Index of what has been sent
-char SendBuffer[FIFOSPI2_BUFFERSIZE]; //Contains the chars to send
-char SendBufferFlags[FIFOSPI2_BUFFERSIZE]; //Flags for driving SS high.
+int TxBuffer_Index = 0; //Index of how full the send buffer is.
+int TxBuffer_TxIndex = 0; //Index of what has been sent
+uint8 TxBuffer[FIFOSPI2_BUFFERSIZE]; //Contains the unit8's to send
+uint8 TxBufferFlags[FIFOSPI2_BUFFERSIZE]; //Flags for when to drive SS.
 
-int ReceiveBuffer_Index = 0; //Index of how full the receive buffer is
-int ReceiveBuffer_ReadIndex = 0; //Index of what has been read out of the buffer
-char ReceiveBuffer[FIFOSPI2_BUFFERSIZE]; //Holds all the receive chars from SPI2
+int RxBuffer_Index = 0; //Index of how full the receive buffer is
+int RxBuffer_ReadIndex = 0; //Index of what has been read out of the buffer
+uint8 RxBuffer[FIFOSPI2_BUFFERSIZE]; //Holds all the receive chars from SPI2
 
 
-void FIFOSPI2_Setup()
+//******************************************************************************
+//Public Function Definitions
+//******************************************************************************
+void FIFOSPI2__initialize()
 {
     //populate the buffers with zeros.
     int i = 0;
     while (i < FIFOSPI2_BUFFERSIZE) 
     {
-        SendBuffer[i] = 0;
-        SendBufferFlags[i] = 0;
-        ReceiveBuffer[i] = 0;
+        TxBuffer[i] = 0;
+        TxBufferFlags[i] = 0;
+        RxBuffer[i] = 0;
         i++;
     }
 
-    //TODO: This needs to based on what device we are using and the sub-devices of the #defines.
-    //Sets up the SPI2 pins for the PIC32M320H
+    //Sets up the pins for SPI for the second device pins
     TRISGbits.TRISG8 = 0; //SDO2 write
     TRISGbits.TRISG7 = 1; //SDI2 read
     TRISGbits.TRISG6 = 0; //SCK2 write
-    TRISDbits.TRISD4 = 0; //SS2 D1 write //Especially here
-    TRISDbits.TRISD3 = 0; //SS2 D2 write
+
+
+    FIFOSPI2_DeviceSSLine1_TriState = 0; //SS2 D1 write //Especially here
+    FIFOSPI2_DeviceSSLine2_TriState = 0; //SS2 D2 write
 
     // disable all interrupts
     INTEnable(INT_SPI2E, INT_DISABLED);
@@ -80,17 +88,15 @@ void FIFOSPI2_Setup()
     INTClearFlag(INT_SPI2TX); 
     INTClearFlag(INT_SPI2RX);
 
-    //Enable SPI2 Interupts
-    //TODO: ERROR: CAUSED FROM EVER ENDING TX INTERUPT FLAGS
-    
+
     //Check to see if their are bytes queued up to be sent
-    if (SendBuffer_Index > 0)
+    if (TxBuffer_Index > 0)
     {
-        //Enables the IRQ to start sending.
+        //Enables the SPI2 IRQ to start sending.
         INTEnable(INT_SPI2TX, INT_ENABLED); //SPI2 transmit buffer empty.
     }
         
-
+    //Enable SPI2 Interupts
     INTEnable(INT_SPI2RX, INT_ENABLED);//SPI2 Receive Done.
     
     //Configure SPI2 and turn it on
@@ -101,11 +107,11 @@ void FIFOSPI2_Setup()
     SPI2CONbits.ON = 1;     //SPI ON
 }
 
-int FIFOSPI2_SendQueue(unsigned char data[], int length, int deviceSSLine)
+int FIFOSPI2_addQueue(uint8 data[], int length, int deviceSSLine)
 {
     int i = 0;
     //If the send buffer isn't full then add another char
-    if ((SendBuffer_Index + length) < FIFOSPI2_BUFFERSIZE)
+    if ((TxBuffer_Index + length) < FIFOSPI2_BUFFERSIZE)
     {
 
 //        //Adds a token to signify end signal group.
@@ -115,8 +121,8 @@ int FIFOSPI2_SendQueue(unsigned char data[], int length, int deviceSSLine)
         while (i < length)
         {
             //Populate SendBuuferFlags with which device we a re sending to.
-            SendBufferFlags[i] = deviceSSLine;
-            SendBuffer[SendBuffer_Index++] = data[i];
+            TxBufferFlags[i] = deviceSSLine;
+            TxBuffer[TxBuffer_Index++] = data[i];
             i++;
         }
 
@@ -143,31 +149,31 @@ int FIFOSPI2_SendQueue(unsigned char data[], int length, int deviceSSLine)
     }
 }
 
-int FIFOSPI2_ReadQueue(unsigned char *bytesBuffer)
+int FIFOSPI2_readQueue(uint8 *bytesBuffer)
 {
     //The receive buffer is empty.
-    if (ReceiveBuffer_Index == 0)
+    if (RxBuffer_Index == 0)
     {
         *bytesBuffer = 0;
         return 0;
     }
     //The receiver buffer has entries.
-    else if (ReceiveBuffer_Index < FIFOSPI2_BUFFERSIZE)
+    else if (RxBuffer_Index < FIFOSPI2_BUFFERSIZE)
     {
-        char rtn = ReceiveBuffer[ReceiveBuffer_ReadIndex++];
+        char rtn = RxBuffer[RxBuffer_ReadIndex++];
         //If all bytes from the buffer have been read.
-        if (ReceiveBuffer_ReadIndex >= ReceiveBuffer_Index)
+        if (RxBuffer_ReadIndex >= RxBuffer_Index)
         {
             //Reset the indexs
-            ReceiveBuffer_ReadIndex = 0;
-            ReceiveBuffer_Index = 0;
+            RxBuffer_ReadIndex = 0;
+            RxBuffer_Index = 0;
         }
 
         *bytesBuffer = rtn;
         return 1;
     }
     //The receive buffer is overflowing.
-    else if (ReceiveBuffer_Index >= FIFOSPI2_BUFFERSIZE)
+    else if (RxBuffer_Index >= FIFOSPI2_BUFFERSIZE)
     {
         *bytesBuffer = 0;
         return -1;
@@ -176,30 +182,16 @@ int FIFOSPI2_ReadQueue(unsigned char *bytesBuffer)
     return -3;
 }
 
-int FIFOSPI2_RecieveBufferIndex()
+int FIFOSPI2_rxBufferIndex()
 {
-    return ReceiveBuffer_Index;
+    return RxBuffer_Index;
 }
 
-//PIC32MX320F128L
-//#define RECEIVE_FLAG        INT_SPI2RX
-//#define TX_FLAG             INT_SPI2TX
-
-//PIC32MX320F128L
-#define RECEIVE_FLAG        INT_U3RXIF
-#define TX_FLAG             INT_U3TXIF
-
-//This is the SPI2 Interupt Handler
+//******************************************************************************
+//Interrupt Request Routines
+//******************************************************************************
 void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
 {
-
-//    INTSetFlag(INT_SPI2TX);
-//    INTClearFlag(INT_SPI2TX);
-//    INTSetFlag(INT_U3TX);
-//    INTClearFlag(INT_U3TX);
-//    SPI2BUF = 0x45;
-//    int tst = IFS1;
-//    int tst2 = SPI2STAT;
     
     //Receive interupt
     if (INTGetFlag(INT_SPI2RX))
@@ -211,34 +203,34 @@ void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
             isTransmitsTurn = 1;
 
             //Read byte from buffer
-            ReceiveBuffer[ReceiveBuffer_Index++] = SPI2BUF;
+            RxBuffer[RxBuffer_Index++] = SPI2BUF;
 
             //Clear Interrupt flag
             INTClearFlag(INT_SPI2RX);
 
 
             //If the current device we are sending to doesn't match the next byte's device
-            if (SendBufferFlags[SendBuffer_SentIndex] != SendBufferFlags[SendBuffer_SentIndex -1])
+            if (TxBufferFlags[TxBuffer_TxIndex] != TxBufferFlags[TxBuffer_TxIndex -1])
             {
                 //TODO: decide if it's better just to deselect all devices.
                 //Deselect the current device
-                switch (SendBufferFlags[ReceiveBuffer_Index - 1])
+                switch (TxBufferFlags[RxBuffer_Index - 1])
                 {
                         case 0:
-                            FIFOSPI2_DeviceSSLine1 = 1;
-                            FIFOSPI2_DeviceSSLine2 = 1;
+                            FIFOSPI2_DeviceSSLine1_PortReg = 1;
+                            FIFOSPI2_DeviceSSLine2_PortReg = 1;
                             break;
                         case 1:
-                             FIFOSPI2_DeviceSSLine1 = 1; //Hi to deselect
+                             FIFOSPI2_DeviceSSLine1_PortReg = 1; //Hi to deselect
                              break;
                         case 2:
-                             FIFOSPI2_DeviceSSLine2 = 1; //Hi to deselect
+                             FIFOSPI2_DeviceSSLine2_PortReg = 1; //Hi to deselect
                              break;
                 }
             }
 
             //If their are bytes to send
-            if (SendBuffer_Index > SendBuffer_SentIndex)
+            if (TxBuffer_Index > TxBuffer_TxIndex)
             {
                 //Set the TX Interupt flag so that it can send them
                 INTSetFlag(INT_SPI2TX);
@@ -254,8 +246,8 @@ void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
                 //update the flag that it's not running anymore.
                 FIFOSPI2_isRunnning = 0;
                 //Clear the Send Buffer indecies
-                SendBuffer_SentIndex = 0;
-                SendBuffer_Index = 0;
+                TxBuffer_TxIndex = 0;
+                TxBuffer_Index = 0;
             }
 
         }
@@ -278,18 +270,18 @@ void __ISR(_SPI_2_VECTOR, IPL4AUTO)__SPI2Interrupt(void)
 //            //Select the current device
 //            FIFOSPI2_DeviceSSLine1 = 0;
             //Select the current device
-            switch (SendBufferFlags[SendBuffer_SentIndex])
+            switch (TxBufferFlags[TxBuffer_TxIndex])
             {
                     case 1:
-                         FIFOSPI2_DeviceSSLine1 = 0; //Low to select
+                         FIFOSPI2_DeviceSSLine1_PortReg = 0; //Low to select
                          break;
                     case 2:
-                         FIFOSPI2_DeviceSSLine2 = 0; //Low to select
+                         FIFOSPI2_DeviceSSLine2_PortReg = 0; //Low to select
                          break;
             }
 
             //Send the next byte
-            SPI2BUF = SendBuffer[SendBuffer_SentIndex++];
+            SPI2BUF = TxBuffer[TxBuffer_TxIndex++];
         }
     }
 }

@@ -16,7 +16,7 @@ extern "C" {
 
         #define SYS_FREQ (80000000L)
         #define GetSystemClock()           (SYS_FREQ)
-        #define GetPeripheralClock()       (SYS_FREQ/8)
+        #define GetPeripheralClock()       (SYS_FREQ/(1 << OSCCONbits.PBDIV))
         #define GetInstructionClock()      (SYS_FREQ)
 
     #endif

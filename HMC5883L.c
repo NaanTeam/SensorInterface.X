@@ -27,7 +27,7 @@ void HMC5883L_startMeasurements()
     //Mode Register
     buffer[2] = 0x00; //cont meaurement mode
 
-    FIFOI2C_addQueue_writeDeviceRegisters(0, 0x00, buffer, 3);
+    FIFOI2C2_addQueue_writeDeviceRegisters(0, 0x00, buffer, 3);
 
 
 //    //Give it time to start up
@@ -41,7 +41,7 @@ void HMC5883L_startMeasurements()
 
 void HMC5883L_queueReadXZY()
 {
-    FIFOI2C_addQueue_readDeviceRegisters(0, 0x03, 6);
+    FIFOI2C2_addQueue_readDeviceRegisters(0, 0x03, 6);
 }
 
 
@@ -53,14 +53,14 @@ void HMC5883L_interpretXZY()
     short x_tmp = 0, z_tmp = 0, y_tmp= 0;
     double gauss_per_LSB = 0;
 
-    x_msb = FIFOI2C_readQueue(0).rx_byte;
-    x_lsb = FIFOI2C_readQueue(0).rx_byte;
+    x_msb = FIFOI2C2_readQueue(0).rx_byte;
+    x_lsb = FIFOI2C2_readQueue(0).rx_byte;
 
-    z_msb = FIFOI2C_readQueue(0).rx_byte;
-    z_lsb = FIFOI2C_readQueue(0).rx_byte;
+    z_msb = FIFOI2C2_readQueue(0).rx_byte;
+    z_lsb = FIFOI2C2_readQueue(0).rx_byte;
 
-    y_msb = FIFOI2C_readQueue(0).rx_byte;
-    y_lsb = FIFOI2C_readQueue(0).rx_byte;
+    y_msb = FIFOI2C2_readQueue(0).rx_byte;
+    y_lsb = FIFOI2C2_readQueue(0).rx_byte;
 
     x_tmp = (x_msb << 8) | x_lsb;
     z_tmp = (z_msb << 8) | z_lsb;

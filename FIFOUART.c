@@ -1,4 +1,19 @@
 
+
+/*
+SPI4: MRF24
+SPI2: FIFOSPI
+I2C2: FIFOI2c
+
+
+UART1 : ____	FT232RQ
+UART2 : MRF24
+UART3 : SPI2
+UART4 : ____
+UART5 : MRF24
+UART6 : SPI2
+*/
+
 #include "FIFOUART.h"
 #include <plib.h>
 

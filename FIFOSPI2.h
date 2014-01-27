@@ -1,12 +1,18 @@
 /**
- * @Author: Connor Martin
- * @Description: A FIFO interrupt driven spi communication method.
- * @Pins:
- *  Chipkit     PIC32MX3XX/4XX  Registers    Descritpion
- *  10          52              RD4          SS2 write
- *  11          6               RG8          SDO2 write
- *  12          5               RG7          SDI2 read
- *  13          4               RG6          SCK2 write
+ * @file: FIFOSPI2.h
+ * @brief: A 'First In First Out' interrupt driven SPI communication method
+ * with this device setup as the master.
+ *
+ * @author: Connor Martin
+ * @date: Nov 26, 2013
+ *
+ * @preconditions:
+ * @device:
+ *      -PIC32MX695F512L
+ * 
+ * @remarks: Currently only supports 2 SPI devices. Some modifications need in
+ * the setup and IRQ needed to support more. (possibly other places as well)
+ *
  */
 
 #ifndef FIFOSPI2_H
@@ -16,54 +22,83 @@
 extern "C" {
 #endif
 
+#include <plib.h>
+#include "Hardware.h"
 
-    #include <plib.h>
+//******************************************************************************
+//Configuration #defines
+//******************************************************************************
+
+/**@brief Controls the slave select pin for the first device on SPI-2 line.*/
+#define FIFOSPI2_DeviceSSLine1_PortReg PORTDbits.RD4
+/**@brief Match this to the corresponding FIFOSPI2_DeviceSSLine1_PortReg.*/
+#define FIFOSPI2_DeviceSSLine1_TriState TRISDbits.TRISD4
+
+/**@brief Controls the slave select pin for the second device on SPI-2 line.*/
+#define FIFOSPI2_DeviceSSLine2_PortReg PORTDbits.RD3
+/**@brief Match this to the corresponding FIFOSPI2_DeviceSSLine2_PortReg.*/
+#define FIFOSPI2_DeviceSSLine2_TriState TRISDbits.TRISD3
+
+/**@brief Controls the maximum transmit and receive buffer sizes.*/
+#define FIFOSPI2_BUFFERSIZE 100
 
 
-    #define FIFOSPI2_DeviceSSLine1 PORTDbits.RD4    //Uno32 Pin 10
-    #define FIFOSPI2_DeviceSSLine2 PORTDbits.RD3    //Uno32 Pin 9
-    #define FIFOSPI2_BUFFERSIZE 100
 
-    extern unsigned char FIFOSPI2_isRunnning;
+//******************************************************************************
+// Public Variables and Typedefs
+//******************************************************************************
+
+/**@brief Indicates whether spi-2's IRQ is currently running. 1 it is. 0 it's not.*/
+extern uint8 FIFOSPI2_isRunnning;
 
 
-    /**
-     * Sets up SPI2 in master modeusing a FIFO buffer at PER_FREQ/4 frequency,
-     * TX and RX IRQ, Idle Clock polarity and data sampled at end of
-     * output time.
-     */
-    void FIFOSPI2_Setup();
-    /**
-     * Adds characters to the SPI buffer to be send.
-     *
-     * @param data: An array of characters to queue for the SPI to send.
-     * @param length: The length of the data array.
-     * @param deviceSSLine: The device to write to. Modify #defines for different
-     * pins.
-     *
-     * @return A '1' if the characters where succesfully added. -1 if the send
-     * buffer is full.
-     */
-    int FIFOSPI2_SendQueue(unsigned char data[], int length, int deviceSSLine);
 
-    /**
-     * Transfers a byte from the received SPI buffer to a pointer.
-     *
-     * @param readByte: A pointer to a char variable.
-     *
-     * @return A '1' if the character was succesfully retrieved. 
-     * A '0' if the buffer is empty.
-     * A '-1' if the receive buffer is overflowing.
-     * A '-2' unknown error.
-    */
-    int FIFOSPI2_ReadQueue(unsigned char *bytesBuffer);
+//******************************************************************************
+// Public Function Declarations
+//******************************************************************************
 
-    /**
-     * Determines the occupied length of the receive buffer.
-     * @return An integer representing the index where the buffer is currently
-     * full to.
-     */
-    int FIFOSPI2_RecieveBufferIndex();
+/**
+ * @brief Sets up SPI2 in master mode using a FIFO buffer.
+ *
+ * Operates at PER_FREQ/4 frequency, TX and RX IRQ, Idle Clock polarity and
+ * data sampled at end of output time.
+ *
+ * @return void
+ */
+void FIFOSPI2__initialize();
+
+/**
+ * @brief Adds uint8's to the SPI TX buffer.
+ *
+ * @param data: An array of uint8 to queue in the TX buffer.
+ * @param length: The length of the data array.
+ * @param deviceSSLine: The device to write to. Modify #defines for different
+ * pins.
+ *
+ * @return A '1' if the characters where succesfully added. '-1' if the TX
+ * buffer is full.
+ */
+int FIFOSPI2_addQueue(uint8 data[], int length, int deviceSSLine);
+
+/**
+ * @brief Transfers a byte from the SPI RX buffer to a uint8.
+ *
+ * @param readByte: A pointer to a uint8 variable.
+ *
+ * @return A '1' if the character was succesfully retrieved.
+ * A '0' if the buffer is empty.
+ * A '-1' if the receive buffer is overflowing.
+ * A '-3' if ti's an unknown error.
+*/
+int FIFOSPI2_readQueue(uint8 *bytesBuffer);
+
+/**
+ * @brief Determines the occupied length of the receive buffer.
+ *
+ * @return An integer representing the index where the buffer is currently
+ * full to.
+ */
+int FIFOSPI2_rxBufferIndex();
 
 
 #ifdef	__cplusplus

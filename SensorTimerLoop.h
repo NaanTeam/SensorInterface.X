@@ -16,7 +16,7 @@ extern "C" {
     #include <plib.h>
 
     #include "FIFOSPI2.h"
-    #include "FIFOI2C.h"
+    #include "FIFOI2C2.h"
 
     #include "ADXL362.h"
     #include "L3G4200D.h"

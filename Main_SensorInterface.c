@@ -161,7 +161,7 @@ int main(int argc, char** argv)
     UART_setup();
     //Configures system for optimum preformance without changing PB divider
     //SYSTEMConfig(GetSystemClock(), SYS_CFG_PCACHE | SYS_CFG_WAIT_STATES);
-    
+
     SensorLoop_SetupAll();
 
     SerialComm_start();
