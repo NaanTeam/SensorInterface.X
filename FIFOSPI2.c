@@ -40,7 +40,7 @@ uint8 RxBuffer[FIFOSPI2_BUFFERSIZE]; //Holds all the receive chars from SPI2
 //******************************************************************************
 //Public Function Definitions
 //******************************************************************************
-void FIFOSPI2__initialize()
+void FIFOSPI2_initialize()
 {
     //populate the buffers with zeros.
     int i = 0;

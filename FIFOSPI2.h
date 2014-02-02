@@ -65,7 +65,7 @@ extern uint8 FIFOSPI2_isRunnning;
  *
  * @return void
  */
-void FIFOSPI2__initialize();
+void FIFOSPI2_initialize();
 
 /**
  * @brief Adds uint8's to the SPI TX buffer.

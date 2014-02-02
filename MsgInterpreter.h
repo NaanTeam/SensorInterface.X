@@ -1,24 +1,33 @@
-/* 
- * File:   SerialComm.h
- * Author: Connor
+/**
+ * @file: MsgInterpreter
+ * @brief: Interprets messages
  *
- * Created on November 13, 2013, 7:08 PM
+ * @author: Connor Martin
+ * @date: Jan 31, 2014
+ *
+ * @preconditions:
+ * @device:
+ *      -PIC32MX695F512L
+ *
+ * @remarks:
+ *
  */
 
-#ifndef SERIALCOMM_H
-#define	SERIALCOMM_H
+#ifndef MSGINTERPRETER_H
+#define	MSGINTERPRETER_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
+    
     #include <plib.h>
 
     #include "Hardware.h"
-    #include "FIFOUART.h"
     #include "ADXL362.h"
     #include "L3G4200D.h"
     #include "HMC5883L.h"
+    #include "FIFOUART1.h"
 
     #define SERIALCOMM_START_TOKEN      0x01
     #define SERIALCOMM_READ_REGISTER    0x02
@@ -42,16 +51,14 @@ extern "C" {
     #define SERIALCOMM_REGISTER_YMagneticVector     0x31
     #define SERIALCOMM_REGISTER_ZMagneticVector     0x32
 
-
-
-    void SerialComm_start();
-    void SerialComm_readRegistersRoutine();
-    void SerialComm_writeRegistersRoutine();
     
+    int MsgInterpreter_interpret(uint8 message[], uint16 length);
+
+
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* SERIALCOMM_H */
+#endif	/* MSGINTERPRETER_H */
 

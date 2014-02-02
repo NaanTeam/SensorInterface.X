@@ -6,21 +6,21 @@
  * @Devices: PIC32MX320F128H
  */
 
-#include "SensorTimerLoop.h"
+#include "SensorLoop.h"
 
 
 void SensorLoop_SetupAll()
 {
 
-    // Enable multi-vector interrupts
-    INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
+
 
     //Setup SPI and I2C
-    FIFOSPI2__initialize();
+    FIFOSPI2_initialize();
     FIFOI2C2_initialize();
 
-
+    INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
     INTEnableInterrupts();
+    
 //    //Setup Accelerometer
     ADXL362_startMeasurements();
 ////    //Setup Gyroscope
@@ -38,8 +38,7 @@ void SensorLoop_SetupAll()
     INTEnable(INT_T1, INT_ENABLED);
     //Turn on clock
     OpenTimer1(T1_ON | T1_SOURCE_INT | T1_PS_1_64, 0x4FFF);
-    //Turn on Interrupts
-    INTEnableInterrupts();
+    
 }
 
 

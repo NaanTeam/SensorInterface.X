@@ -6,8 +6,8 @@
  * @Devices: PIC32MX320F128H
  */
 
-#ifndef SensorTimerLoop_H
-#define	SensorTimerLoop_H
+#ifndef SensorLoop_H
+#define	SensorLoop_H
 
 #ifdef	__cplusplus
 extern "C" {

@@ -12,7 +12,7 @@
 
 #include "Hardware.h"
 
-#include "SensorTimerLoop.h"
+#include "CommunicationLoop.h"
 #include "ADXL362.h"
 #include "L3G4200D.h"
 #include "FIFOSPI2.h"
@@ -132,17 +132,6 @@
 #pragma config FPBDIV   = DIV_8
 // </editor-fold>
 
-#define UART_MODULE_ID UART1 // PIM is connected to WF32 through UART1 module
-
-    
-void UART_setup(void){
-    int b = 0;
-    UARTConfigure(UART_MODULE_ID, UART_ENABLE_PINS_TX_RX_ONLY);
-    //UARTSetFifoMode(UART_MODULE_ID, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
-    UARTSetLineControl(UART_MODULE_ID, UART_DATA_SIZE_8_BITS | UART_PARITY_NONE | UART_STOP_BITS_1);
-    b = UARTSetDataRate(UART_MODULE_ID, GetPeripheralClock(), 9600);
-    UARTEnable(UART_MODULE_ID, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
-}
 
 
 void DelayTime(int ms)
@@ -158,13 +147,16 @@ void DelayTime(int ms)
 int main(int argc, char** argv)
 {
 
-    UART_setup();
-    //Configures system for optimum preformance without changing PB divider
-    //SYSTEMConfig(GetSystemClock(), SYS_CFG_PCACHE | SYS_CFG_WAIT_STATES);
-
     SensorLoop_SetupAll();
 
-    SerialComm_start();
+    // Enable multi-vector interrupts
+    INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
+    //Turn on Interrupts
+    INTEnableInterrupts();
+
+
+    CommunicationLoop_initialize();
+    
 
 
 
